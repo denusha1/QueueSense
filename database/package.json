@@ -1,0 +1,6 @@
+{
+  "name": "queuesense-database-checks",
+  "private": true,
+  "scripts": { "test": "node tests/verify.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.8" }
+}

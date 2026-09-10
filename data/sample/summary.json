@@ -1,0 +1,593 @@
+{
+  "synthetic": true,
+  "generatorVersion": "1.0.0",
+  "seed": 42,
+  "start": "2026-06-01",
+  "end": "2026-08-29",
+  "latestServiceDate": "2026-08-29",
+  "calendarDays": 90,
+  "counts": {
+    "departments": 3,
+    "staff": 9,
+    "staff_schedules": 1206,
+    "queue_sessions": 234,
+    "queue_tokens": 15265,
+    "service_events": 59245,
+    "staff_availability": 2412
+  },
+  "fingerprint": "f26dcebc263c4f85c51edb7bf2277639065f2f64f0f9cb2d71a5a42b54f3646d",
+  "departments": [
+    {
+      "id": "a5ada2ac-a423-5e20-ae3e-3d961b2a78ce",
+      "code": "GEN",
+      "name": "General medicine",
+      "arrivals": 6154,
+      "completed": 5662,
+      "cancelled": 220,
+      "noShows": 272,
+      "averageWait": 38.9
+    },
+    {
+      "id": "fe46bb4e-fdf1-5887-803c-0b7fbbff282d",
+      "code": "DEN",
+      "name": "Dental care",
+      "arrivals": 3791,
+      "completed": 3478,
+      "cancelled": 154,
+      "noShows": 159,
+      "averageWait": 46.1
+    },
+    {
+      "id": "6e9a6576-313c-5398-aef1-4a543b7328dc",
+      "code": "EYE",
+      "name": "Eye clinic",
+      "arrivals": 5320,
+      "completed": 4889,
+      "cancelled": 205,
+      "noShows": 226,
+      "averageWait": 15.2
+    }
+  ],
+  "samples": [
+    {
+      "token": "GEN-001",
+      "patient": "SYN-GEN-20260829-001",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:01:27+05:30",
+      "start": "2026-08-29T08:02:27+05:30",
+      "completed": "2026-08-29T08:09:44.862545+05:30"
+    },
+    {
+      "token": "GEN-002",
+      "patient": "SYN-GEN-20260829-002",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:04:02+05:30",
+      "start": "2026-08-29T08:05:02+05:30",
+      "completed": "2026-08-29T08:14:45.052153+05:30"
+    },
+    {
+      "token": "GEN-003",
+      "patient": "SYN-GEN-20260829-003",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:18:48+05:30",
+      "start": "2026-08-29T08:19:48+05:30",
+      "completed": "2026-08-29T08:32:38.326675+05:30"
+    },
+    {
+      "token": "GEN-004",
+      "patient": "SYN-GEN-20260829-004",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:19:32+05:30",
+      "start": "2026-08-29T08:20:32+05:30",
+      "completed": "2026-08-29T08:28:44.468025+05:30"
+    },
+    {
+      "token": "GEN-005",
+      "patient": "SYN-GEN-20260829-005",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:25:52+05:30",
+      "start": "2026-08-29T08:29:44.468025+05:30",
+      "completed": "2026-08-29T08:44:56.386345+05:30"
+    },
+    {
+      "token": "GEN-006",
+      "patient": "SYN-GEN-20260829-006",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:36:54+05:30",
+      "start": "2026-08-29T08:37:54+05:30",
+      "completed": "2026-08-29T08:48:10.934810+05:30"
+    },
+    {
+      "token": "GEN-007",
+      "patient": "SYN-GEN-20260829-007",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:43:21+05:30",
+      "start": "2026-08-29T08:45:56.386345+05:30",
+      "completed": "2026-08-29T08:58:50.649895+05:30"
+    },
+    {
+      "token": "GEN-008",
+      "patient": "SYN-GEN-20260829-008",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:45:48+05:30",
+      "start": "2026-08-29T08:49:10.934810+05:30",
+      "completed": "2026-08-29T09:14:04.020065+05:30"
+    },
+    {
+      "token": "GEN-009",
+      "patient": "SYN-GEN-20260829-009",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:52:19+05:30",
+      "start": "2026-08-29T08:59:50.649895+05:30",
+      "completed": "2026-08-29T09:11:49.536434+05:30"
+    },
+    {
+      "token": "GEN-010",
+      "patient": "SYN-GEN-20260829-010",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:56:36+05:30",
+      "start": "2026-08-29T09:12:49.536434+05:30",
+      "completed": "2026-08-29T09:22:25.924351+05:30"
+    },
+    {
+      "token": "GEN-011",
+      "patient": "SYN-GEN-20260829-011",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:59:40+05:30",
+      "start": "2026-08-29T09:15:04.020065+05:30",
+      "completed": "2026-08-29T09:27:35.243478+05:30"
+    },
+    {
+      "token": "GEN-012",
+      "patient": "SYN-GEN-20260829-012",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:00:48+05:30",
+      "start": "2026-08-29T09:23:25.924351+05:30",
+      "completed": "2026-08-29T09:43:36.613833+05:30"
+    },
+    {
+      "token": "GEN-013",
+      "patient": "SYN-GEN-20260829-013",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:06:51+05:30",
+      "start": "2026-08-29T09:28:35.243478+05:30",
+      "completed": "2026-08-29T09:42:53.641598+05:30"
+    },
+    {
+      "token": "GEN-014",
+      "patient": "SYN-GEN-20260829-014",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:07:47+05:30",
+      "start": "2026-08-29T09:43:53.641598+05:30",
+      "completed": "2026-08-29T09:56:51.968410+05:30"
+    },
+    {
+      "token": "GEN-015",
+      "patient": "SYN-GEN-20260829-015",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:12:12+05:30",
+      "start": "2026-08-29T09:44:36.613833+05:30",
+      "completed": "2026-08-29T09:52:58.147599+05:30"
+    },
+    {
+      "token": "GEN-016",
+      "patient": "SYN-GEN-20260829-016",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:16:42+05:30",
+      "start": "2026-08-29T09:53:58.147599+05:30",
+      "completed": "2026-08-29T10:10:27.138118+05:30"
+    },
+    {
+      "token": "GEN-017",
+      "patient": "SYN-GEN-20260829-017",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:19:25+05:30",
+      "start": "2026-08-29T09:57:51.968410+05:30",
+      "completed": "2026-08-29T10:07:29.069530+05:30"
+    },
+    {
+      "token": "GEN-018",
+      "patient": "SYN-GEN-20260829-018",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:23:23+05:30",
+      "start": "2026-08-29T10:08:29.069530+05:30",
+      "completed": "2026-08-29T10:19:29.394277+05:30"
+    },
+    {
+      "token": "GEN-019",
+      "patient": "SYN-GEN-20260829-019",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:29:50+05:30",
+      "start": "2026-08-29T10:11:27.138118+05:30",
+      "completed": "2026-08-29T10:20:55.739289+05:30"
+    },
+    {
+      "token": "GEN-020",
+      "patient": "SYN-GEN-20260829-020",
+      "department": "GEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:30:33+05:30",
+      "start": "2026-08-29T10:20:29.394277+05:30",
+      "completed": "2026-08-29T10:30:05.188588+05:30"
+    },
+    {
+      "token": "DEN-001",
+      "patient": "SYN-DEN-20260829-001",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:35:42+05:30",
+      "start": "2026-08-29T08:36:42+05:30",
+      "completed": "2026-08-29T08:56:48.571651+05:30"
+    },
+    {
+      "token": "DEN-002",
+      "patient": "SYN-DEN-20260829-002",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T08:46:26+05:30",
+      "start": "2026-08-29T08:47:26+05:30",
+      "completed": "2026-08-29T08:58:30.853555+05:30"
+    },
+    {
+      "token": "DEN-003",
+      "patient": "SYN-DEN-20260829-003",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:06:43+05:30",
+      "start": "2026-08-29T09:07:43+05:30",
+      "completed": "2026-08-29T09:25:18.046281+05:30"
+    },
+    {
+      "token": "DEN-004",
+      "patient": "SYN-DEN-20260829-004",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:07:30+05:30",
+      "start": "2026-08-29T09:08:30+05:30",
+      "completed": "2026-08-29T09:23:49.013954+05:30"
+    },
+    {
+      "token": "DEN-005",
+      "patient": "SYN-DEN-20260829-005",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:10:40+05:30",
+      "start": "2026-08-29T09:24:49.013954+05:30",
+      "completed": "2026-08-29T09:50:52.328192+05:30"
+    },
+    {
+      "token": "DEN-006",
+      "patient": "SYN-DEN-20260829-006",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:19:19+05:30",
+      "start": "2026-08-29T09:26:18.046281+05:30",
+      "completed": "2026-08-29T09:37:46.728330+05:30"
+    },
+    {
+      "token": "DEN-007",
+      "patient": "SYN-DEN-20260829-007",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:26:26+05:30",
+      "start": "2026-08-29T09:38:46.728330+05:30",
+      "completed": "2026-08-29T09:54:30.759677+05:30"
+    },
+    {
+      "token": "DEN-008",
+      "patient": "SYN-DEN-20260829-008",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:31:10+05:30",
+      "start": "2026-08-29T09:51:52.328192+05:30",
+      "completed": "2026-08-29T10:09:22.635184+05:30"
+    },
+    {
+      "token": "DEN-009",
+      "patient": "SYN-DEN-20260829-009",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:53:15+05:30",
+      "start": "2026-08-29T09:55:30.759677+05:30",
+      "completed": "2026-08-29T10:25:35.730630+05:30"
+    },
+    {
+      "token": "DEN-010",
+      "patient": "SYN-DEN-20260829-010",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T09:54:33+05:30",
+      "start": "2026-08-29T10:10:22.635184+05:30",
+      "completed": "2026-08-29T10:22:23.712925+05:30"
+    },
+    {
+      "token": "DEN-011",
+      "patient": "SYN-DEN-20260829-011",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T10:12:11+05:30",
+      "start": "2026-08-29T10:23:23.712925+05:30",
+      "completed": "2026-08-29T10:40:47.198956+05:30"
+    },
+    {
+      "token": "DEN-012",
+      "patient": "SYN-DEN-20260829-012",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T10:17:40+05:30",
+      "start": "2026-08-29T10:26:35.730630+05:30",
+      "completed": "2026-08-29T10:46:48.512593+05:30"
+    },
+    {
+      "token": "DEN-013",
+      "patient": "SYN-DEN-20260829-013",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T10:29:31+05:30",
+      "start": "2026-08-29T10:41:47.198956+05:30",
+      "completed": "2026-08-29T11:09:30.197824+05:30"
+    },
+    {
+      "token": "DEN-014",
+      "patient": "SYN-DEN-20260829-014",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T10:30:27+05:30",
+      "start": "2026-08-29T10:47:48.512593+05:30",
+      "completed": "2026-08-29T11:08:26.829784+05:30"
+    },
+    {
+      "token": "DEN-015",
+      "patient": "SYN-DEN-20260829-015",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T10:33:46+05:30",
+      "start": "2026-08-29T11:09:26.829784+05:30",
+      "completed": "2026-08-29T11:47:10.863096+05:30"
+    },
+    {
+      "token": "DEN-016",
+      "patient": "SYN-DEN-20260829-016",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T10:41:27+05:30",
+      "start": "2026-08-29T11:10:30.197824+05:30",
+      "completed": "2026-08-29T11:26:54.357171+05:30"
+    },
+    {
+      "token": "DEN-017",
+      "patient": "SYN-DEN-20260829-017",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T10:47:18+05:30",
+      "start": "2026-08-29T11:27:54.357171+05:30",
+      "completed": "2026-08-29T11:52:26.785886+05:30"
+    },
+    {
+      "token": "DEN-018",
+      "patient": "SYN-DEN-20260829-018",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T11:28:26+05:30",
+      "start": "2026-08-29T13:01:00+05:30",
+      "completed": "2026-08-29T13:28:13.024622+05:30"
+    },
+    {
+      "token": "DEN-019",
+      "patient": "SYN-DEN-20260829-019",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T12:25:19+05:30",
+      "start": "2026-08-29T13:01:00+05:30",
+      "completed": "2026-08-29T13:19:43.013339+05:30"
+    },
+    {
+      "token": "DEN-020",
+      "patient": "SYN-DEN-20260829-020",
+      "department": "DEN",
+      "status": "completed",
+      "arrival": "2026-08-29T12:28:13+05:30",
+      "start": "2026-08-29T13:20:43.013339+05:30",
+      "completed": "2026-08-29T13:44:07.844322+05:30"
+    },
+    {
+      "token": "EYE-001",
+      "patient": "SYN-EYE-20260829-001",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T08:07:48+05:30",
+      "start": "2026-08-29T08:08:48+05:30",
+      "completed": "2026-08-29T08:18:47.361906+05:30"
+    },
+    {
+      "token": "EYE-002",
+      "patient": "SYN-EYE-20260829-002",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T08:26:42+05:30",
+      "start": "2026-08-29T08:27:42+05:30",
+      "completed": "2026-08-29T08:37:15.980210+05:30"
+    },
+    {
+      "token": "EYE-003",
+      "patient": "SYN-EYE-20260829-003",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T08:37:52+05:30",
+      "start": "2026-08-29T08:38:52+05:30",
+      "completed": "2026-08-29T08:47:28.108033+05:30"
+    },
+    {
+      "token": "EYE-004",
+      "patient": "SYN-EYE-20260829-004",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T08:44:46+05:30",
+      "start": "2026-08-29T08:45:46+05:30",
+      "completed": "2026-08-29T08:52:04.625465+05:30"
+    },
+    {
+      "token": "EYE-005",
+      "patient": "SYN-EYE-20260829-005",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:18:56+05:30",
+      "start": "2026-08-29T09:19:56+05:30",
+      "completed": "2026-08-29T09:29:15.702352+05:30"
+    },
+    {
+      "token": "EYE-006",
+      "patient": "SYN-EYE-20260829-006",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:20:48+05:30",
+      "start": "2026-08-29T09:21:48+05:30",
+      "completed": "2026-08-29T09:29:38.955103+05:30"
+    },
+    {
+      "token": "EYE-007",
+      "patient": "SYN-EYE-20260829-007",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:22:12+05:30",
+      "start": "2026-08-29T09:30:15.702352+05:30",
+      "completed": "2026-08-29T09:37:02.284861+05:30"
+    },
+    {
+      "token": "EYE-008",
+      "patient": "SYN-EYE-20260829-008",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:23:55+05:30",
+      "start": "2026-08-29T09:30:38.955103+05:30",
+      "completed": "2026-08-29T09:39:34.093821+05:30"
+    },
+    {
+      "token": "EYE-009",
+      "patient": "SYN-EYE-20260829-009",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:35:51+05:30",
+      "start": "2026-08-29T09:38:02.284861+05:30",
+      "completed": "2026-08-29T09:42:56.509016+05:30"
+    },
+    {
+      "token": "EYE-010",
+      "patient": "SYN-EYE-20260829-010",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:36:56+05:30",
+      "start": "2026-08-29T09:40:34.093821+05:30",
+      "completed": "2026-08-29T09:47:58.628873+05:30"
+    },
+    {
+      "token": "EYE-011",
+      "patient": "SYN-EYE-20260829-011",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:41:00+05:30",
+      "start": "2026-08-29T09:43:56.509016+05:30",
+      "completed": "2026-08-29T09:52:58.179792+05:30"
+    },
+    {
+      "token": "EYE-012",
+      "patient": "SYN-EYE-20260829-012",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:45:32+05:30",
+      "start": "2026-08-29T09:48:58.628873+05:30",
+      "completed": "2026-08-29T09:57:59.124573+05:30"
+    },
+    {
+      "token": "EYE-013",
+      "patient": "SYN-EYE-20260829-013",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:50:17+05:30",
+      "start": "2026-08-29T09:53:58.179792+05:30",
+      "completed": "2026-08-29T09:59:43.512105+05:30"
+    },
+    {
+      "token": "EYE-014",
+      "patient": "SYN-EYE-20260829-014",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T09:57:13+05:30",
+      "start": "2026-08-29T09:58:59.124573+05:30",
+      "completed": "2026-08-29T10:05:01.720289+05:30"
+    },
+    {
+      "token": "EYE-015",
+      "patient": "SYN-EYE-20260829-015",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T10:03:53+05:30",
+      "start": "2026-08-29T10:04:53+05:30",
+      "completed": "2026-08-29T10:13:52.909159+05:30"
+    },
+    {
+      "token": "EYE-016",
+      "patient": "SYN-EYE-20260829-016",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T10:10:26+05:30",
+      "start": "2026-08-29T10:11:26+05:30",
+      "completed": "2026-08-29T10:20:30.824618+05:30"
+    },
+    {
+      "token": "EYE-017",
+      "patient": "SYN-EYE-20260829-017",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T10:11:26+05:30",
+      "start": "2026-08-29T10:14:52.909159+05:30",
+      "completed": "2026-08-29T10:24:10.191063+05:30"
+    },
+    {
+      "token": "EYE-018",
+      "patient": "SYN-EYE-20260829-018",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T10:12:26+05:30",
+      "start": "2026-08-29T10:21:30.824618+05:30",
+      "completed": "2026-08-29T10:27:45.123403+05:30"
+    },
+    {
+      "token": "EYE-019",
+      "patient": "SYN-EYE-20260829-019",
+      "department": "EYE",
+      "status": "completed",
+      "arrival": "2026-08-29T10:16:36+05:30",
+      "start": "2026-08-29T10:25:10.191063+05:30",
+      "completed": "2026-08-29T10:34:28.993039+05:30"
+    },
+    {
+      "token": "EYE-020",
+      "patient": "SYN-EYE-20260829-020",
+      "department": "EYE",
+      "status": "cancelled",
+      "arrival": "2026-08-29T10:17:30+05:30",
+      "start": null,
+      "completed": null
+    }
+  ]
+}

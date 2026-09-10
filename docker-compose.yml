@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: queuesense
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: queuesense
+      TZ: Asia/Colombo
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U queuesense -d queuesense"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  migrate:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://queuesense:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/queuesense
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["migrate"]
+  seed:
+    profiles: ["demo"]
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://queuesense:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/queuesense
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./data/generated:/workspace/data/generated:ro
+    command: ["seed"]
+volumes:
+  postgres_data:
