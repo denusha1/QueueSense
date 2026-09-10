@@ -5,10 +5,11 @@ Patient flow and waiting-time analytics for healthcare operations. QueueSense br
 ## Current progress
 
 - **Step 1 approved:** responsive welcome/login interface, four workspace roles, credential field validation, password visibility and role previews.
-- **Step 2 ready for review:** PostgreSQL schema and migrations, synthetic data generator, integrity tests, Docker setup, and a browsable dataset snapshot.
-- **Next:** actual authentication and role enforcement, after user review.
+- **Step 2 approved:** PostgreSQL schema and migrations, synthetic data generator, integrity tests, Docker setup, and a browsable dataset snapshot.
+- **Step 3 ready for review:** real FastAPI/PostgreSQL authentication, server-side role permissions, sessions and logout.
+- **Next:** live queue operations, after user review.
 
-The login is a UI preview. Authentication, operational APIs and prediction models are not connected. Entered credentials are not transmitted or persisted. All visible clinic records are fictional.
+Login now connects to FastAPI and PostgreSQL. Passwords are hashed with Argon2id; session tokens are stored as hashes. Choose a role and use **Explore the demo → Enter … demo** for a real local demo session. Operational controls and trained models are still planned; all clinic records remain fictional.
 
 ## Open the running preview
 
@@ -50,4 +51,13 @@ Rebuild the frontend after changing the generated snapshot.
 
 Seven generator tests pass. Embedded PostgreSQL checks apply all migrations, load the complete dataset, reconcile SQL/Python metrics, validate the queue lifecycle, reject 11 invalid writes, and check rollback. The frontend production build includes TypeScript validation.
 
-Docker and native PostgreSQL are not installed in this workspace, so the supplied Docker Compose and psycopg CLI paths have not been executed. PGlite is used only for SQL testing; it does not substitute for the planned deployed PostgreSQL service. Real authentication and runtime database permissions are the next stage.
+Native PostgreSQL 17.10 now runs locally on port 55432, with all four migrations and the synthetic seed applied. Native integrity checks, restricted-role checks and 12 authentication API tests pass. Docker Compose remains unexecuted. PGlite remains optional SQL test tooling. See [authentication setup and behavior](backend/README.md).
+
+Start the auth service before the frontend:
+
+```sh
+.venv/bin/python -m backend.local_setup
+.venv/bin/python -m backend.local_run
+```
+
+Full local database/API verification: `.venv/bin/python -m backend.verify_local`. API docs: http://127.0.0.1:8001/docs.

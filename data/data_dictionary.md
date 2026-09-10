@@ -6,7 +6,7 @@ Every timestamp is PostgreSQL `timestamptz`; generated CSV timestamps carry `+05
 
 | Table | Columns and meaning |
 | --- | --- |
-| users | `id`; lowercase unique `email`; required `password_hash`; `role` = admin/reception/doctor/manager; `is_active`; `created_at`. No accounts are seeded. Password hashing and server authorization arrive in step 3. |
+| users | `id`; lowercase unique `email`; required `password_hash`; `role` = admin/reception/doctor/manager; `is_active`; `created_at`. Step 3 provisions explicit demo accounts separately; password hashes use Argon2id and server-side roles govern access. |
 | departments | `id`; unique uppercase `code`; unique `name`; fictional `location`; IANA `timezone`; positive `queue_threshold`; `is_active`. |
 | staff | `id`; nullable unique `user_id` (demo clinicians have no accounts); `department_id`; fictional `display_name`; `staff_type` = doctor/service; `is_active`. |
 | staff_schedules | `id`; `staff_id`; local `service_date`; `start_at`; `end_at` strictly after start; `status` = scheduled/cancelled. Generator emits two daily work intervals separated by lunch and explicitly extends the afternoon interval for any generated overtime. |
@@ -44,3 +44,7 @@ Database constraints cover references, department alignment, token uniqueness, t
 Defaults: start 2026-06-01, 90 calendar days through 2026-08-29, seed 42, generator version 1.0.0. Sundays closed. Demand varies by weekday, hour and department. Two or three clinicians operate per department/day, with 12:00–13:00 lunch; arrivals occur 08:00–16:00. Service durations follow capped log-normal distributions and occasional delays; cancellations/no-shows each occur with approximately 4% probability. Service is FIFO with no clinical priority logic. Shift lengths include any synthetic overtime explicitly, which is an assumption and not a staffing recommendation.
 
 The SHA-256 fingerprint covers the complete canonical generated table data, not just the displayed sample. Repeatability is checked for the same parameters/runtime; keep the Python version fixed when comparing artifacts across environments.
+
+## Step 3 authentication tables
+
+`auth_sessions`: SHA-256 `token_hash` primary key, `user_id`, `created_at`, `expires_at` after creation. Raw session tokens are never persisted. `login_attempts`: identity `id`, hashed `account_hash`/`source_hash`, `succeeded`, `attempted_at`; supports persisted login throttling. API runtime is restricted to authentication tables and necessary user columns; clinical/queue tables remain inaccessible to this role until subsequent services are added.

@@ -46,6 +46,6 @@ npm test --prefix database
 
 The database test dependency runs **embedded PostgreSQL via PGlite**; it is test tooling only, not the application database. Tests apply every migration, insert the full generated dataset, reconcile counts and SQL/Python waits, validate a full queue lifecycle, reject 11 invalid writes and verify rollback. This does not verify Docker, host networking, the native psycopg CLI, least-privilege runtime roles, or production Postgres deployment.
 
-Validated in this workspace: Python 3.9.6, Node 25.6.1, PGlite 0.5.8. Docker and native PostgreSQL were unavailable, so the Compose/native path is supplied but not executed. The Docker helper uses Python 3.12 and PostgreSQL 17; smoke-test that path after installing Docker.
+Validated in this workspace: Python 3.9.6, Node 25.6.1, PGlite 0.5.8. Step 3 subsequently installed portable native PostgreSQL 17.10, ran the migration and seed CLI, re-ran migrations safely and passed the same integrity SQL. Docker remains unavailable and Compose is unexecuted. The Docker helper uses Python 3.12 and PostgreSQL 17; smoke-test that path after installing Docker.
 
 See [data dictionary](../data/data_dictionary.md) and [ER diagram](../docs/architecture/database.md).

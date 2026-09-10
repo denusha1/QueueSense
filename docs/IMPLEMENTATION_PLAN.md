@@ -5,12 +5,12 @@ The report is a proposed product specification, not instructions to execute unre
 
 ## Reviewed / current steps
 
-1. **Welcome / login interface and frontend foundation** — complete; production build and browser interaction checks passed. Next.js, TypeScript, responsive role selector, credential validation, password visibility, and an honest demo preview. Authentication is not connected and no credentials are sent or stored. User approved step 1.
+1. **Welcome / login interface and frontend foundation** — complete; production build and browser interaction checks passed. Next.js, TypeScript, responsive role selector, credential validation, password visibility, and an honest demo preview. Original UI preview approved; superseded by step 3 real authentication.
 
-2. **Database foundation — implemented, user review pending.** Three PostgreSQL migrations, 12 domain tables, constraints/triggers, indexes, metric views, transactional migration/seed CLI, reproducible 90-day synthetic dataset, data dictionary, ER diagram, Docker services, and `/demo-data` snapshot review page. SQL and full seed verified using embedded PostgreSQL; Docker/native PostgreSQL unavailable locally, so Compose and psycopg execution remain unverified. See `database/README.md`.
+2. **Database foundation — user approved.** Three PostgreSQL migrations, 12 domain tables, constraints/triggers, indexes, metric views, transactional migration/seed CLI, reproducible 90-day synthetic dataset, data dictionary, ER diagram, Docker services, and `/demo-data` snapshot review page. SQL and full seed originally verified using embedded PostgreSQL; step 3 also verified native PostgreSQL migrations, seeding and integrity. Docker execution remains unverified. See `database/README.md`.
 ## Following steps (each requires review after completion)
 
-3. Authentication: FastAPI, hashed passwords, server-side role permissions, sessions, login integration, protected routes and access tests (FR-01).
+3. **Authentication — implemented, review pending.** FastAPI, Argon2id password hashes, PostgreSQL sessions and attempt limits, exact-origin checks, HttpOnly cookies, protected role workspaces, logout revocation, optional demo accounts, staff provisioning CLI and restricted database role. Native PostgreSQL 17.10 running locally; 12 API tests pass (FR-01).
 4. Operations home / live queue: department and staff configuration, schedules, polling then live events as needed (FR-03–05).
 5. Patient check-in: synthetic identifiers, safe token generation and input validation (FR-02).
 6. Queue lifecycle: waiting → called → in service → completed; cancellation/no-show rules, event history and timestamp checks (FR-03–04).

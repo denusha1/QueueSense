@@ -5,3 +5,6 @@ frontend/.next
 **/__pycache__
 data/generated
 **/node_modules
+.local
+.venv
+.pytest_cache

@@ -16,6 +16,26 @@ export function Welcome() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  useEffect(() => {
+    fetch('/api/auth/demo', { cache: 'no-store' }).then(response => response.ok ? response.json() : { enabled: false }).then(data => setDemoEnabled(data.enabled === true)).catch(() => setDemoEnabled(false));
+  }, []);
+  async function signIn(demo: boolean, email?: string, password?: string) {
+    setBusy(true); setMessage('');
+    try {
+      const response = await fetch(`/api/auth/${demo ? 'demo' : 'login'}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: role.toLowerCase(), ...(demo ? {} : { email, password }) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Check your email and password, then try again.');
+      window.location.assign(`/workspace/${data.role}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to sign in. Please try again.');
+      setBusy(false);
+    }
+  }
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (preview) dialogRef.current?.showModal(); }, [preview]);
   const selected = roles.find(item => item.name === role)!;
@@ -55,23 +75,23 @@ export function Welcome() {
       <div className="login-content">
         <span className="welcome-icon"><Layers3 size={25} /></span>
         <div className="welcome-copy"><p className="section-label">YOUR WORKDAY, CONNECTED</p><h2>Welcome to QueueSense</h2><p>Better patient flow starts with you.</p></div>
-        <fieldset className="role-fieldset"><legend>Choose your workspace</legend><div className="roles">{roles.map(({name, description, icon: Icon}) => <label key={name} className={`role-card ${role === name ? "selected" : ""}`}><input type="radio" name="role" value={name} checked={role === name} onChange={() => {setRole(name);setMessage("");}} /><Icon size={20} /><span className="role-name">{name}</span><span className="role-description">{description}</span><span className="radio-mark">{role === name && <Check size={9} strokeWidth={3} />}</span></label>)}</div></fieldset>
-        <form onSubmit={event => {event.preventDefault();setMessage("Staff sign-in is not connected yet. Use the demo preview below to explore your selected role.");}}>
-          <label className="field-label" htmlFor="email">Work email</label><div className="input-wrap"><Mail size={18} /><input id="email" name="email" type="email" placeholder="you@clinic.com" autoComplete="username" required /></div>
-          <div className="password-label"><label className="field-label" htmlFor="password">Password</label><button className="text-button" type="button" onClick={() => setMessage("Password recovery will be available when staff authentication is connected. No accounts have been created in this preview.")}>Forgot password?</button></div>
-          <div className="input-wrap"><LockKeyhole size={18} /><input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" autoComplete="current-password" required /><button className="visibility-button" type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
-          <p className="auth-note"><LockKeyhole size={12} /> UI preview · staff authentication is not connected</p>
+        <fieldset className="role-fieldset" disabled={busy}><legend>Choose your workspace</legend><div className="roles">{roles.map(({name, description, icon: Icon}) => <label key={name} className={`role-card ${role === name ? "selected" : ""}`}><input type="radio" name="role" value={name} checked={role === name} onChange={() => {setRole(name);setMessage("");}} /><Icon size={20} /><span className="role-name">{name}</span><span className="role-description">{description}</span><span className="radio-mark">{role === name && <Check size={9} strokeWidth={3} />}</span></label>)}</div></fieldset>
+        <form onSubmit={event => {event.preventDefault(); const fields = new FormData(event.currentTarget); void signIn(false, String(fields.get("email")), String(fields.get("password")));}}>
+          <label className="field-label" htmlFor="email">Work email</label><div className="input-wrap"><Mail size={18} /><input id="email" name="email" type="email" placeholder="you@clinic.com" autoComplete="username" maxLength={254} disabled={busy} required /></div>
+          <div className="password-label"><label className="field-label" htmlFor="password">Password</label><button className="text-button" type="button" onClick={() => setMessage("Contact your clinic administrator to recover access. Self-service password reset is not available yet.")}>Forgot password?</button></div>
+          <div className="input-wrap"><LockKeyhole size={18} /><input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" autoComplete="current-password" maxLength={128} disabled={busy} required /><button className="visibility-button" type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
+          <p className="auth-note"><LockKeyhole size={12} /> Secure session · your account determines workspace access</p>
           {message && <p role="status" className="form-message">{message}</p>}
-          <button className="primary-button" type="submit">Sign in as {role.toLowerCase()}<ArrowRight size={17} /></button>
+          <button className="primary-button" type="submit" disabled={busy}>{busy ? "Signing in…" : `Sign in as ${role.toLowerCase()}`}<ArrowRight size={17} /></button>
         </form>
         <div className="divider"><span />Just taking a look?<span /></div>
-        <button className="demo-button" onClick={() => setPreview(true)}><Sparkles size={17} /> Explore the demo <ArrowUpRight size={16} /></button>
-        <p className="demo-note">No account needed. Only synthetic, non-identifying data.</p>
+        <button className="demo-button" disabled={!demoEnabled || busy} onClick={() => {setMessage("");setPreview(true);}}><Sparkles size={17} /> Explore the demo <ArrowUpRight size={16} /></button>
+        <p className="demo-note">{demoEnabled ? "Try a demo account. Only synthetic, non-identifying data." : "Demo sign-in is currently unavailable. Staff can sign in above."}</p>
         <Link className="dataset-entry-link" href="/demo-data">View the demo dataset <ArrowUpRight size={12} /></Link>
         <div className="privacy"><ShieldCheck size={20} /><p><strong>Thoughtfully designed for healthcare operations.</strong><br />Queue insights and planning, without personal medical records.</p></div>
       </div>
       <footer className="entry-footer"><span>© {new Date().getFullYear()} QueueSense</span><span>Clarity for every step of care.</span></footer>
     </section>
-    {preview && <div className="modal-backdrop" onClick={event => {if(event.target === event.currentTarget) setPreview(false);}}><dialog ref={dialogRef} onCancel={() => setPreview(false)} className="preview-dialog" aria-labelledby="preview-title" onKeyDown={event => {if(event.key === "Escape") setPreview(false);}}><button autoFocus className="close-button" aria-label="Close demo preview" onClick={() => setPreview(false)}><X size={20} /></button><span className="welcome-icon"><selected.icon size={25} /></span><p className="section-label">STEP 1 · WORKSPACE PREVIEW</p><h2 id="preview-title">Your {role.toLowerCase()} workspace</h2><p>{selected.detail}</p><div className="preview-notice"><Check size={18} /><span>Role selection is ready. This is a preview of the entry page; operational pages and secure access will be built in the following steps.</span></div><button className="primary-button" onClick={() => setPreview(false)}>Back to welcome <ArrowRight size={17} /></button></dialog></div>}
+    {preview && <div className="modal-backdrop" onClick={event => {if(event.target === event.currentTarget) setPreview(false);}}><dialog ref={dialogRef} onCancel={() => setPreview(false)} className="preview-dialog" aria-labelledby="preview-title" onKeyDown={event => {if(event.key === "Escape") setPreview(false);}}><button autoFocus className="close-button" aria-label="Close demo preview" onClick={() => setPreview(false)}><X size={20} /></button><span className="welcome-icon"><selected.icon size={25} /></span><p className="section-label">DEMO ACCOUNT · REAL SIGN-IN</p><h2 id="preview-title">Your {role.toLowerCase()} workspace</h2><p>{selected.detail}</p><div className="preview-notice"><Check size={18} /><span>Enter a shared demo account with access to this workspace. Login and role checks are connected; operational tools are coming in the next steps.</span></div>{message && <p role="alert" className="demo-login-error">{message}</p>}<button className="primary-button" disabled={busy} onClick={() => void signIn(true)}>{busy ? "Signing in…" : `Enter ${role.toLowerCase()} demo`} <ArrowRight size={17} /></button></dialog></div>}
   </main>;
 }
