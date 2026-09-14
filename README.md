@@ -10,6 +10,14 @@ Choose **Admin → Explore the demo → Enter admin demo** for all features. Rec
 
 The full workspace includes live queue, patient check-in/status, department queue board, clinician availability/schedules, manager analytics, department/workload/peak-hour analysis, model performance, staffing simulation, alerts, CSV import, CSV/PDF reports, user/department administration and audit history. See the [delivery matrix and review guide](docs/DELIVERY.md).
 
+## Premium interface
+
+The shared visual system now uses an ink-and-teal navigation shell, layered hero artwork, locally hosted DM Sans/Manrope typography, clearer metrics, responsive forms and tables, and consistent appointment, QR and patient screens. Chart legends let you show or hide a series while preserving at least one visible series. Charts also support arrow-key exploration.
+
+Pointer lighting, floating line art, chart-bar entrances, dialog transitions, scroll progress and a keyboard-friendly back-to-top control provide subtle interaction feedback. Reduced-motion preferences disable decorative animation and pointer effects. Local font files and their OFL licenses live under `frontend/public/fonts`, eliminating runtime Google Fonts requests.
+
+Run `node frontend/tests/premium-ui.cjs` with the local app running to verify chart controls, keyboard focus, motion preferences, mobile navigation and all 16 workspace views at 375, 768 and 1440 pixels.
+
 ## Workspace enhancements
 
 Use **⌘/Ctrl K** to search the pages available to your role. **Compact** saves a denser layout in this browser; **Focus** hides navigation while retaining workspace search. Live queue and department board support status filtering, token search and sorting by arrival, token or estimated wait.

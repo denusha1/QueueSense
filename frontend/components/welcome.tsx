@@ -45,7 +45,7 @@ export function Welcome() {
       <a className="brand" href="/" aria-label="QueueSense home"><span className="brand-icon"><Activity size={25} strokeWidth={2.5} /></span>Queue<span className="brand-light">Sense</span></a>
       <div className="story-main">
         <div className="story-edition"><span>THE CARE EXPERIENCE</span><span>01 — 04</span></div><div className="eyebrow"><span className="status-dot" /> PATIENT FLOW, REIMAGINED</div>
-        <h1>Less waiting.<br />More <span>caring.</span></h1>
+        <h1 tabIndex={-1}>Less waiting.<br />More <span>caring.</span></h1>
         <p className="intro">A clearer picture of your clinic. Bring your people,<br className="desktop-break" /> queues, and insights together in one place.</p>
 
         <div className="snapshot">
