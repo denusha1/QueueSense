@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./polish.css";
+import "./experience.css";
+import "./buttons.css";
 
 export const metadata: Metadata = {
   title: "QueueSense · Welcome",

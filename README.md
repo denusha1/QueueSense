@@ -1,63 +1,64 @@
 # QueueSense
 
-Patient flow and waiting-time analytics for healthcare operations. QueueSense brings queue events, operational insights and, in later stages, evaluated waiting-time predictions together. The planned stack is Next.js / TypeScript, FastAPI, PostgreSQL, Pandas and scikit-learn.
+A full-stack patient-flow and waiting-time analytics application built with Next.js, TypeScript, FastAPI, PostgreSQL and scikit-learn. It connects synthetic check-in/service events to queue visibility, filtered operational analytics and evaluated waiting-time estimates. It is not a clinical decision system.
 
-## Current progress
+## Open the application
 
-- **Step 1 approved:** responsive welcome/login interface, four workspace roles, credential field validation, password visibility and role previews.
-- **Step 2 approved:** PostgreSQL schema and migrations, synthetic data generator, integrity tests, Docker setup, and a browsable dataset snapshot.
-- **Step 3 ready for review:** real FastAPI/PostgreSQL authentication, server-side role permissions, sessions and logout.
-- **Next:** live queue operations, after user review.
+**Local app:** http://127.0.0.1:3001 · **API docs:** http://127.0.0.1:8001/docs
 
-Login now connects to FastAPI and PostgreSQL. Passwords are hashed with Argon2id; session tokens are stored as hashes. Choose a role and use **Explore the demo → Enter … demo** for a real local demo session. Operational controls and trained models are still planned; all clinic records remain fictional.
+Choose **Admin → Explore the demo → Enter admin demo** for all features. Reception and Doctor focus on queue operations; Manager has analytics and planning access. All clinic data is synthetic.
 
-## Open the running preview
+The full workspace includes live queue, patient check-in/status, department queue board, clinician availability/schedules, manager analytics, department/workload/peak-hour analysis, model performance, staffing simulation, alerts, CSV import, CSV/PDF reports, user/department administration and audit history. See the [delivery matrix and review guide](docs/DELIVERY.md).
 
-[Demo Data review](http://127.0.0.1:3001/demo-data) · [Welcome page](http://127.0.0.1:3001)
-
-These links are local to the Mac running the server, not public deployments. The data page reads a saved generated snapshot; it does not report live PostgreSQL data or connection health.
-
-## Run frontend
+## Start the existing local installation
 
 ```sh
-cd frontend
-npm ci
-npm run dev -- --port 3001
+.venv/bin/python scripts/start_local.py
 ```
 
-Build and production preview:
+The native PostgreSQL cluster runs privately on port 55432 with random credentials stored only under ignored `.local/`. The API runs on 8001 and frontend on 3001. Restart API/frontend after code or model changes.
+
+## Fresh local setup
 
 ```sh
-npm run build
-npm run start -- --port 3001
-```
-
-## Database and dataset
-
-The default generator produces 90 calendar days, 15,265 fictional tokens, three departments, nine demo clinicians and 234 sessions. Full CSVs and seed SQL are generated locally; the small snapshot is committed. Database deliverables include 12 domain tables, three migrations, partial indexes, queue/timestamp/event validation, SQL metric views, and transactional migration/seed commands.
-
-See [database setup](database/README.md), [data dictionary](data/data_dictionary.md), [ER diagram](docs/architecture/database.md), and [full implementation plan](docs/IMPLEMENTATION_PLAN.md).
-
-```sh
+python3.12 -m venv .venv
+.venv/bin/pip install -r backend/requirements.lock
+npm ci --prefix frontend
 python3 data/generator/generate.py
-python3 -m unittest discover -s data/generator -p 'test_*.py' -v
-npm ci --prefix database
-npm test --prefix database
+.venv/bin/python ml/src/train.py
+# Install PostgreSQL 17; set POSTGRES_BIN if it is outside the default Homebrew path.
+.venv/bin/python -m backend.local_setup
+.venv/bin/python -m backend.bootstrap_product
+npm run build --prefix frontend
+.venv/bin/python scripts/start_local.py
 ```
 
-Rebuild the frontend after changing the generated snapshot.
+On Apple Silicon this workspace uses portable native PostgreSQL binaries installed with `npm install --prefix .local/pg-runtime @embedded-postgres/darwin-arm64@17.10.0-beta.17`; the setup helper detects them automatically. The failed Homebrew download is not needed to run the application.
 
-## Validation and limits
+See [backend configuration](backend/README.md) and [database setup](database/README.md). No production secrets or personal patient records are committed.
 
-Seven generator tests pass. Embedded PostgreSQL checks apply all migrations, load the complete dataset, reconcile SQL/Python metrics, validate the queue lifecycle, reject 11 invalid writes, and check rollback. The frontend production build includes TypeScript validation.
+## Data, models and verification
 
-Native PostgreSQL 17.10 now runs locally on port 55432, with all four migrations and the synthetic seed applied. Native integrity checks, restricted-role checks and 12 authentication API tests pass. Docker Compose remains unexecuted. PGlite remains optional SQL test tooling. See [authentication setup and behavior](backend/README.md).
+The reproducible seed contains 15,265 fictional visits across 90 calendar days, three departments and nine clinicians. Current demo visits add to this baseline. Data dictionary: [data/data_dictionary.md](data/data_dictionary.md).
 
-Start the auth service before the frontend:
+The selected Random Forest achieves **7.10-minute MAE** on unseen chronological synthetic test data versus **9.62 minutes** for the queue-rate baseline. [Model methodology and limitations](ml/README.md), [evaluation results](ml/evaluation/results.json).
 
 ```sh
-.venv/bin/python -m backend.local_setup
-.venv/bin/python -m backend.local_run
+python3 -m unittest discover -s data/generator -p 'test_*.py' -v
+.venv/bin/python -m backend.verify_local
+npm run build --prefix frontend
+# With the local app running; install Chromium once with npx playwright install chromium.
+npm run test:e2e --prefix frontend
 ```
 
-Full local database/API verification: `.venv/bin/python -m backend.verify_local`. API docs: http://127.0.0.1:8001/docs.
+Verification includes native PostgreSQL migrations/seed/integrity, concurrent token numbering, staff occupancy, role/session controls, lifecycle-to-analytics, import dry-run/errors/duplicates, PDF/CSV output, simulator edges and feature-leakage checks. Chromium checks cover all 15 workspace views, check-in through completion, patient status, forms and responsive layouts. Screenshots: [docs/screenshots](docs/screenshots).
+
+## Architecture and deployment
+
+[System architecture](docs/architecture/system.md) · [ER diagram](docs/architecture/database.md) · [Portfolio wording](docs/PORTFOLIO.md) · [Deployment guide](docs/DEPLOYMENT.md).
+
+Dockerfiles, Compose services and a GitHub Actions workflow are supplied. Docker/CI are not executed here. **The running link is local, not a public deployment.** Cloud hosting, public DNS/HTTPS and a production database must be configured externally before a public release. Optional notifications, real hospital integrations, probabilistic intervals and automatic retraining remain future enhancements.
+
+## Demo recording
+
+[Two-minute synthetic-data walkthrough](docs/demo/queuesense-walkthrough.webm).

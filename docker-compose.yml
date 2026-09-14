@@ -39,7 +39,7 @@ services:
       - ./data/generated:/workspace/data/generated:ro
     command: ["seed"]
   api:
-    profiles: ["auth"]
+    profiles: ["auth", "full"]
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -53,5 +53,17 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+  frontend:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      AUTH_API_URL: http://api:8001
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://127.0.0.1:3001,http://localhost:3001}
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - api
 volumes:
   postgres_data:

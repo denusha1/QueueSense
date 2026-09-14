@@ -1,6 +1,6 @@
-# Authentication (step 3)
+# Backend: authentication and product services
 
-Next.js proxies fixed authentication routes to FastAPI. FastAPI checks passwords and sessions against PostgreSQL. The browser's selected role is never an authorization source: every workspace checks the persisted user role, including direct backend requests. All four role workspaces are currently entry pages with planned tools clearly labelled.
+Next.js proxies fixed authentication routes to FastAPI. FastAPI checks passwords and sessions against PostgreSQL. The browser's selected role is never an authorization source: every workspace checks the persisted user role, including direct backend requests. Role workspaces now provide operational, analytics and administrative tools; see `docs/DELIVERY.md` for the complete feature matrix.
 
 ## Local setup
 
@@ -40,9 +40,9 @@ The command prompts for a 12–128 character password and confirmation without e
 - Successful login replaces the caller's previous session. Logout deletes the session server-side. Expired or disabled-account sessions fail immediately. User role changes affect subsequent requests without trusting stale browser claims.
 - State-changing requests require an exact allowlisted Origin. Next.js additionally enforces its own same-origin check and only forwards fixed login/logout/me/demo paths. Credentials are never placed in localStorage. Proxy requests are limited to 4 KiB and have timeouts.
 - Failed account attempts are limited to five in 15 minutes; all attempts from the backend peer are limited to 60. Counts live in PostgreSQL and are serialized with a transaction lock. Behind the Next.js proxy the peer limit is intentionally shared, not a claim of individual-client IP detection; deployment should configure an appropriate trusted edge rate limiter for higher traffic.
-- API runtime role can read the necessary user columns, rehash passwords and manage sessions/attempts. It cannot change roles, create users, read operational tables or create schema objects. See `database/sql/auth_runtime_grants.sql`.
+- API runtime role has explicit authentication and product-table grants, including the writes required for administrator features. It cannot create schema objects, delete user accounts or act as database owner. End-user role permissions are enforced in FastAPI before each protected operation. See `database/sql/auth_runtime_grants.sql` and `database/sql/product_runtime_grants.sql`.
 - Authentication responses use no-store. API database errors return a generic 503; logs contain error class/path, not credentials, cookies or connection URLs.
-- No public registration, password reset, MFA or user-management UI is claimed in this step. Public deployment and HTTPS are not configured yet.
+- An administrator-only user-management UI is implemented. Public registration, self-service password reset and MFA are not implemented. Public deployment and HTTPS are not configured yet.
 
 ## API
 
@@ -78,6 +78,8 @@ Tests cover password login for all four roles, direct API cross-role denial, coo
 
 The optional Compose `auth` profile provides the API container. Provision a restricted `queuesense_auth` PostgreSQL role and apply the grants file first, then set `AUTH_DATABASE_URL` in root `.env` to that role's URL and run `docker compose --profile auth up -d api`. Do not give the API the database-owner URL. Docker execution is not verified on this Mac.
 
-Production requires `APP_ENV=production`, HTTPS-only `FRONTEND_ORIGINS`, disabled demo login and an HTTPS frontend. Set frontend server-only `AUTH_API_URL` to the private API address. Add operational role grants separately as later services are implemented.
+Production requires `APP_ENV=production`, HTTPS-only `FRONTEND_ORIGINS`, disabled demo login and an HTTPS frontend. Set frontend server-only `AUTH_API_URL` to the private API address. Apply the supplied product runtime grants for the implemented queue, analytics and administrative services.
 
 Verified for this delivery: 12 native PostgreSQL API tests passed; browser checks passed for all four demo sign-ins, refresh persistence, HttpOnly cookies, denied cross-role pages, logout revocation, incorrect credentials, origin rejection and mobile layout. Next.js production build and TypeScript validation passed. Two dependency deprecation warnings appeared in the Python test client; they did not fail tests.
+
+Product API endpoints and interactive schemas are exposed in the running FastAPI `/docs`. Model source/evaluation, CSV contracts, metrics and full delivery limits are documented in `ml/README.md`, `data/data_dictionary.md` and `docs/DELIVERY.md`.

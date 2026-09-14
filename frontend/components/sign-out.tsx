@@ -13,5 +13,5 @@ export function SignOut() {
       window.location.assign('/');
     } catch { setError('Could not sign out. Please try again.'); setBusy(false); }
   }
-  return <div><button className="workspace-signout" onClick={logout} disabled={busy}><LogOut size={15} />{busy ? 'Signing out…' : 'Sign out'}</button>{error && <p className="form-message" role="alert">{error}</p>}</div>;
+  return <div><button className="workspace-signout" onClick={logout} disabled={busy} aria-busy={busy}><LogOut size={15} />{busy ? 'Signing out…' : 'Sign out'}</button>{error && <p className="form-message" role="alert">{error}</p>}</div>;
 }

@@ -1,0 +1,550 @@
+{
+  "version": "synthetic-v1",
+  "selected": "Random Forest",
+  "dataset": "Synthetic generator v1.0.0; seed 42",
+  "features": [
+    "department",
+    "queue_ahead",
+    "active_staff",
+    "recent_service",
+    "arrivals_30m",
+    "hour",
+    "weekday"
+  ],
+  "train": {
+    "start": "2026-06-01",
+    "end": "2026-07-23",
+    "rows": 8308
+  },
+  "validation_period": {
+    "start": "2026-07-24",
+    "end": "2026-08-11",
+    "rows": 2861
+  },
+  "test": {
+    "start": "2026-08-12",
+    "end": "2026-08-29",
+    "rows": 2860
+  },
+  "validation": {
+    "Operational baseline": {
+      "mae": 10.6908,
+      "rmse": 22.7141,
+      "r2": 0.6909
+    },
+    "Linear": {
+      "mae": 13.0254,
+      "rmse": 19.9502,
+      "r2": 0.7615
+    },
+    "Random Forest": {
+      "mae": 7.5133,
+      "rmse": 14.0932,
+      "r2": 0.881
+    },
+    "Gradient Boosting": {
+      "mae": 8.2655,
+      "rmse": 14.1016,
+      "r2": 0.8808
+    }
+  },
+  "test_metrics": {
+    "mae": 7.1038,
+    "rmse": 14.0474,
+    "r2": 0.873
+  },
+  "baseline_test": {
+    "mae": 9.6164,
+    "rmse": 21.9535,
+    "r2": 0.6898
+  },
+  "by_department": [
+    {
+      "group": "6e9a6576-313c-5398-aef1-4a543b7328dc",
+      "count": 991,
+      "mae": 4.9265,
+      "rmse": 11.7163,
+      "r2": 0.7268
+    },
+    {
+      "group": "a5ada2ac-a423-5e20-ae3e-3d961b2a78ce",
+      "count": 1138,
+      "mae": 6.9074,
+      "rmse": 12.5566,
+      "r2": 0.898
+    },
+    {
+      "group": "fe46bb4e-fdf1-5887-803c-0b7fbbff282d",
+      "count": 731,
+      "mae": 10.3614,
+      "rmse": 18.4525,
+      "r2": 0.8592
+    }
+  ],
+  "by_hour": [
+    {
+      "group": 8,
+      "count": 395,
+      "mae": 1.6959,
+      "rmse": 2.9707,
+      "r2": 0.7099
+    },
+    {
+      "group": 9,
+      "count": 557,
+      "mae": 3.7135,
+      "rmse": 6.4828,
+      "r2": 0.8496
+    },
+    {
+      "group": 10,
+      "count": 551,
+      "mae": 7.6077,
+      "rmse": 16.7442,
+      "r2": 0.8316
+    },
+    {
+      "group": 11,
+      "count": 315,
+      "mae": 25.5645,
+      "rmse": 30.7428,
+      "r2": 0.6926
+    },
+    {
+      "group": 12,
+      "count": 110,
+      "mae": 15.7089,
+      "rmse": 19.6842,
+      "r2": 0.6358
+    },
+    {
+      "group": 13,
+      "count": 355,
+      "mae": 5.4085,
+      "rmse": 8.4945,
+      "r2": 0.9543
+    },
+    {
+      "group": 14,
+      "count": 332,
+      "mae": 3.1209,
+      "rmse": 5.3186,
+      "r2": 0.9856
+    },
+    {
+      "group": 15,
+      "count": 245,
+      "mae": 2.6525,
+      "rmse": 5.5866,
+      "r2": 0.9738
+    }
+  ],
+  "samples": [
+    {
+      "actual": 1.0,
+      "predicted": 1.0,
+      "date": "2026-08-12"
+    },
+    {
+      "actual": 4.77,
+      "predicted": 2.97,
+      "date": "2026-08-12"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.56,
+      "date": "2026-08-12"
+    },
+    {
+      "actual": 33.86,
+      "predicted": 29.22,
+      "date": "2026-08-12"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.2,
+      "date": "2026-08-12"
+    },
+    {
+      "actual": 97.22,
+      "predicted": 32.51,
+      "date": "2026-08-12"
+    },
+    {
+      "actual": 5.76,
+      "predicted": 18.64,
+      "date": "2026-08-13"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 3.09,
+      "date": "2026-08-13"
+    },
+    {
+      "actual": 9.06,
+      "predicted": 6.28,
+      "date": "2026-08-13"
+    },
+    {
+      "actual": 42.66,
+      "predicted": 27.05,
+      "date": "2026-08-13"
+    },
+    {
+      "actual": 51.8,
+      "predicted": 37.56,
+      "date": "2026-08-13"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.14,
+      "date": "2026-08-14"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 21.08,
+      "date": "2026-08-14"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 2.53,
+      "date": "2026-08-14"
+    },
+    {
+      "actual": 178.31,
+      "predicted": 168.4,
+      "date": "2026-08-14"
+    },
+    {
+      "actual": 152.16,
+      "predicted": 154.13,
+      "date": "2026-08-14"
+    },
+    {
+      "actual": 165.56,
+      "predicted": 164.17,
+      "date": "2026-08-14"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.32,
+      "date": "2026-08-15"
+    },
+    {
+      "actual": 11.18,
+      "predicted": 7.25,
+      "date": "2026-08-15"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.89,
+      "date": "2026-08-15"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.98,
+      "date": "2026-08-15"
+    },
+    {
+      "actual": 20.15,
+      "predicted": 15.71,
+      "date": "2026-08-17"
+    },
+    {
+      "actual": 4.24,
+      "predicted": 2.8,
+      "date": "2026-08-17"
+    },
+    {
+      "actual": 109.38,
+      "predicted": 97.2,
+      "date": "2026-08-17"
+    },
+    {
+      "actual": 140.96,
+      "predicted": 145.77,
+      "date": "2026-08-17"
+    },
+    {
+      "actual": 130.42,
+      "predicted": 35.32,
+      "date": "2026-08-17"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.38,
+      "date": "2026-08-18"
+    },
+    {
+      "actual": 5.66,
+      "predicted": 7.06,
+      "date": "2026-08-18"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 3.73,
+      "date": "2026-08-18"
+    },
+    {
+      "actual": 65.85,
+      "predicted": 57.16,
+      "date": "2026-08-18"
+    },
+    {
+      "actual": 13.44,
+      "predicted": 10.97,
+      "date": "2026-08-18"
+    },
+    {
+      "actual": 8.61,
+      "predicted": 15.36,
+      "date": "2026-08-18"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 11.39,
+      "date": "2026-08-19"
+    },
+    {
+      "actual": 4.4,
+      "predicted": 3.7,
+      "date": "2026-08-19"
+    },
+    {
+      "actual": 3.91,
+      "predicted": 6.59,
+      "date": "2026-08-19"
+    },
+    {
+      "actual": 5.51,
+      "predicted": 25.91,
+      "date": "2026-08-19"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.0,
+      "date": "2026-08-20"
+    },
+    {
+      "actual": 70.84,
+      "predicted": 49.82,
+      "date": "2026-08-20"
+    },
+    {
+      "actual": 10.57,
+      "predicted": 12.35,
+      "date": "2026-08-20"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 12.31,
+      "date": "2026-08-20"
+    },
+    {
+      "actual": 20.28,
+      "predicted": 15.5,
+      "date": "2026-08-20"
+    },
+    {
+      "actual": 16.51,
+      "predicted": 10.04,
+      "date": "2026-08-21"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 24.9,
+      "date": "2026-08-21"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.0,
+      "date": "2026-08-21"
+    },
+    {
+      "actual": 12.47,
+      "predicted": 13.72,
+      "date": "2026-08-21"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.16,
+      "date": "2026-08-21"
+    },
+    {
+      "actual": 9.45,
+      "predicted": 45.85,
+      "date": "2026-08-21"
+    },
+    {
+      "actual": 2.77,
+      "predicted": 2.47,
+      "date": "2026-08-22"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 2.41,
+      "date": "2026-08-22"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.42,
+      "date": "2026-08-22"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 2.43,
+      "date": "2026-08-24"
+    },
+    {
+      "actual": 86.81,
+      "predicted": 179.86,
+      "date": "2026-08-24"
+    },
+    {
+      "actual": 44.59,
+      "predicted": 36.58,
+      "date": "2026-08-24"
+    },
+    {
+      "actual": 28.4,
+      "predicted": 34.63,
+      "date": "2026-08-24"
+    },
+    {
+      "actual": 54.34,
+      "predicted": 48.8,
+      "date": "2026-08-24"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 3.25,
+      "date": "2026-08-24"
+    },
+    {
+      "actual": 23.26,
+      "predicted": 34.36,
+      "date": "2026-08-24"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.83,
+      "date": "2026-08-25"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.16,
+      "date": "2026-08-25"
+    },
+    {
+      "actual": 12.12,
+      "predicted": 10.39,
+      "date": "2026-08-25"
+    },
+    {
+      "actual": 41.28,
+      "predicted": 46.9,
+      "date": "2026-08-25"
+    },
+    {
+      "actual": 21.4,
+      "predicted": 17.44,
+      "date": "2026-08-25"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.57,
+      "date": "2026-08-26"
+    },
+    {
+      "actual": 1.88,
+      "predicted": 6.77,
+      "date": "2026-08-26"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.81,
+      "date": "2026-08-26"
+    },
+    {
+      "actual": 46.01,
+      "predicted": 44.14,
+      "date": "2026-08-26"
+    },
+    {
+      "actual": 5.03,
+      "predicted": 1.9,
+      "date": "2026-08-26"
+    },
+    {
+      "actual": 64.2,
+      "predicted": 103.85,
+      "date": "2026-08-26"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 2.0,
+      "date": "2026-08-27"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.0,
+      "date": "2026-08-27"
+    },
+    {
+      "actual": 10.18,
+      "predicted": 9.12,
+      "date": "2026-08-27"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.19,
+      "date": "2026-08-27"
+    },
+    {
+      "actual": 99.22,
+      "predicted": 103.06,
+      "date": "2026-08-27"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.84,
+      "date": "2026-08-28"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.7,
+      "date": "2026-08-28"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.68,
+      "date": "2026-08-28"
+    },
+    {
+      "actual": 15.31,
+      "predicted": 10.2,
+      "date": "2026-08-28"
+    },
+    {
+      "actual": 23.02,
+      "predicted": 14.54,
+      "date": "2026-08-28"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 1.39,
+      "date": "2026-08-28"
+    },
+    {
+      "actual": 1.0,
+      "predicted": 2.19,
+      "date": "2026-08-29"
+    }
+  ],
+  "limitations": [
+    "Synthetic data only; no real-world performance claim.",
+    "Features replay only events available before each arrival. Labels and final service duration never enter features.",
+    "Model choice uses validation MAE; selected model refits train+validation before one final test.",
+    "No probabilistic confidence intervals. Breaks, priority policies and atypical clinics can reduce accuracy."
+  ]
+}

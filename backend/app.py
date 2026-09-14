@@ -85,7 +85,7 @@ WORKSPACES = {
 
 def create_app(settings=None):
     settings = settings or Settings.from_env()
-    app = FastAPI(title='QueueSense Authentication API', version='0.3.0')
+    app = FastAPI(title='QueueSense API', version='1.0.0')
     app.state.settings = settings
 
     @app.middleware('http')
@@ -100,7 +100,7 @@ def create_app(settings=None):
     @app.exception_handler(psycopg.Error)
     async def database_error(request, exc):
         LOG.error('database_unavailable path=%s error_type=%s', request.url.path, type(exc).__name__)
-        return JSONResponse({'detail': 'Authentication is temporarily unavailable. Please try again.'}, status_code=503, headers={'Cache-Control': 'no-store'})
+        return JSONResponse({'detail': 'The database service is temporarily unavailable. Please try again.'}, status_code=503, headers={'Cache-Control': 'no-store'})
 
     def current_user(request: Request):
         token = request.cookies.get(COOKIE, '')
@@ -195,4 +195,6 @@ def create_app(settings=None):
             conn.execute('SELECT 1 FROM auth_sessions LIMIT 1')
         return {'status': 'ok'}
 
+    from backend.product import attach_product
+    attach_product(app, settings, current_user)
     return app

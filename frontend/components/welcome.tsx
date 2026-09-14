@@ -44,7 +44,7 @@ export function Welcome() {
     <section className="story" aria-label="About QueueSense">
       <a className="brand" href="/" aria-label="QueueSense home"><span className="brand-icon"><Activity size={25} strokeWidth={2.5} /></span>Queue<span className="brand-light">Sense</span></a>
       <div className="story-main">
-        <div className="eyebrow"><span className="status-dot" /> PATIENT FLOW, REIMAGINED</div>
+        <div className="story-edition"><span>THE CARE EXPERIENCE</span><span>01 — 04</span></div><div className="eyebrow"><span className="status-dot" /> PATIENT FLOW, REIMAGINED</div>
         <h1>Less waiting.<br />More <span>caring.</span></h1>
         <p className="intro">A clearer picture of your clinic. Bring your people,<br className="desktop-break" /> queues, and insights together in one place.</p>
 
@@ -65,7 +65,7 @@ export function Welcome() {
           <div className="chart-times"><span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span></div>
           <div className="snapshot-bottom"><span><span className="status-dot" /> A little visibility makes a big difference.</span><Activity size={16} /></div>
         </div>
-        <div className="features"><span><Check size={15} /> Clearer queues</span><span><Check size={15} /> Smarter planning</span><span><Check size={15} /> Better experiences</span></div>
+        <div className="care-journey" aria-label="Connected patient journey"><span><Users size={16}/> Arrive</span><i/><span><Clock3 size={16}/> Connect</span><i/><span><HeartPulse size={16}/> Care</span></div><div className="features"><span><Check size={15} /> Clearer queues</span><span><Check size={15} /> Smarter planning</span><span><Check size={15} /> Better experiences</span></div>
       </div>
       <footer className="story-footer"><span>Built around people. Powered by insights.</span><HeartPulse size={20} /></footer>
     </section>
@@ -82,7 +82,7 @@ export function Welcome() {
           <div className="input-wrap"><LockKeyhole size={18} /><input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" autoComplete="current-password" maxLength={128} disabled={busy} required /><button className="visibility-button" type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
           <p className="auth-note"><LockKeyhole size={12} /> Secure session · your account determines workspace access</p>
           {message && <p role="status" className="form-message">{message}</p>}
-          <button className="primary-button" type="submit" disabled={busy}>{busy ? "Signing in…" : `Sign in as ${role.toLowerCase()}`}<ArrowRight size={17} /></button>
+          <button className="primary-button" type="submit" disabled={busy} aria-busy={busy}>{busy ? "Signing in…" : `Sign in as ${role.toLowerCase()}`}<ArrowRight size={17} /></button>
         </form>
         <div className="divider"><span />Just taking a look?<span /></div>
         <button className="demo-button" disabled={!demoEnabled || busy} onClick={() => {setMessage("");setPreview(true);}}><Sparkles size={17} /> Explore the demo <ArrowUpRight size={16} /></button>
@@ -92,6 +92,6 @@ export function Welcome() {
       </div>
       <footer className="entry-footer"><span>© {new Date().getFullYear()} QueueSense</span><span>Clarity for every step of care.</span></footer>
     </section>
-    {preview && <div className="modal-backdrop" onClick={event => {if(event.target === event.currentTarget) setPreview(false);}}><dialog ref={dialogRef} onCancel={() => setPreview(false)} className="preview-dialog" aria-labelledby="preview-title" onKeyDown={event => {if(event.key === "Escape") setPreview(false);}}><button autoFocus className="close-button" aria-label="Close demo preview" onClick={() => setPreview(false)}><X size={20} /></button><span className="welcome-icon"><selected.icon size={25} /></span><p className="section-label">DEMO ACCOUNT · REAL SIGN-IN</p><h2 id="preview-title">Your {role.toLowerCase()} workspace</h2><p>{selected.detail}</p><div className="preview-notice"><Check size={18} /><span>Enter a shared demo account with access to this workspace. Login and role checks are connected; operational tools are coming in the next steps.</span></div>{message && <p role="alert" className="demo-login-error">{message}</p>}<button className="primary-button" disabled={busy} onClick={() => void signIn(true)}>{busy ? "Signing in…" : `Enter ${role.toLowerCase()} demo`} <ArrowRight size={17} /></button></dialog></div>}
+    {preview && <div className="modal-backdrop" onClick={event => {if(event.target === event.currentTarget) setPreview(false);}}><dialog ref={dialogRef} onCancel={() => setPreview(false)} className="preview-dialog" aria-labelledby="preview-title" onKeyDown={event => {if(event.key === "Escape") setPreview(false);}}><button autoFocus className="close-button" aria-label="Close demo preview" onClick={() => setPreview(false)}><X size={20} /></button><span className="welcome-icon"><selected.icon size={25} /></span><p className="section-label">DEMO ACCOUNT · REAL SIGN-IN</p><h2 id="preview-title">Your {role.toLowerCase()} workspace</h2><p>{selected.detail}</p><div className="preview-notice"><Check size={18} /><span>Enter a shared demo account with access to this workspace. Explore live queues, operations and the tools available to this role using synthetic clinic data.</span></div>{message && <p role="alert" className="demo-login-error">{message}</p>}<button className="primary-button" disabled={busy} aria-busy={busy} onClick={() => void signIn(true)}>{busy ? "Signing in…" : `Enter ${role.toLowerCase()} demo`} <ArrowRight size={17} /></button></dialog></div>}
   </main>;
 }

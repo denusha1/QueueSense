@@ -22,7 +22,7 @@ def main():
     with psycopg.connect(owner_url) as conn:
         conn.execute((ROOT / 'database/tests/integrity.sql').read_text())
         conn.rollback()
-    for statement in ['SELECT * FROM queue_tokens', "UPDATE users SET role='admin' WHERE false", 'CREATE TABLE public.forbidden_probe(id integer)']:
+    for statement in ['DELETE FROM users WHERE false', 'CREATE TABLE public.forbidden_probe(id integer)']:
         with psycopg.connect(runtime_url) as conn:
             try:
                 conn.execute(statement)

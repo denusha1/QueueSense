@@ -48,3 +48,9 @@ The SHA-256 fingerprint covers the complete canonical generated table data, not 
 ## Step 3 authentication tables
 
 `auth_sessions`: SHA-256 `token_hash` primary key, `user_id`, `created_at`, `expires_at` after creation. Raw session tokens are never persisted. `login_attempts`: identity `id`, hashed `account_hash`/`source_hash`, `succeeded`, `attempted_at`; supports persisted login throttling. API runtime is restricted to authentication tables and necessary user columns; clinical/queue tables remain inaccessible to this role until subsequent services are added.
+
+## Product extensions
+
+`queue_tokens.public_key`: optional unique high-entropy secret for private status lookup. `queue_tokens.import_key`: optional SHA-256 department/day/token identity for historical import deduplication. A partial unique index permits at most one called/in-service token per clinician. One unresolved alert per department/type is enforced with a partial unique index.
+
+Operational queue pages read PostgreSQL, not the static sample JSON. Today's session is created at first check-in. Opening a completed daily session is refused; session close requires no active waiting/called/in-service tokens. Service state and matching event records commit in one transaction. Public token responses omit patient identifiers, staff identifiers and database IDs.
