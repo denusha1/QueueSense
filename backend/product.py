@@ -133,7 +133,27 @@ WHERE s.service_date=(now() AT TIME ZONE d.timezone)::date AND (%s::uuid IS NULL
     return rows
 
 
+def issue_token(conn,department_id,user=None):
+    conn.execute('SELECT pg_advisory_xact_lock(72419023)')
+    dep=conn.execute('SELECT * FROM departments WHERE id=%s AND is_active',(department_id,)).fetchone()
+    if not dep: raise HTTPException(404,'Department unavailable.')
+    now=datetime.now(ZoneInfo(dep['timezone']))
+    conn.execute('INSERT INTO queue_sessions(department_id,service_date,opened_at) VALUES(%s,%s,%s) ON CONFLICT(department_id,service_date) DO NOTHING',(dep['id'],now.date(),now.replace(hour=0,minute=0,second=0,microsecond=0)))
+    session=conn.execute('SELECT * FROM queue_sessions WHERE department_id=%s AND service_date=%s FOR UPDATE',(dep['id'],now.date())).fetchone()
+    if session['closed_at']: raise HTTPException(409,'Today’s session has been closed.')
+    number=conn.execute('SELECT coalesce(max(token_no),0)+1 AS next FROM queue_tokens WHERE session_id=%s',(session['id'],)).fetchone()['next']
+    row=conn.execute('INSERT INTO queue_tokens(session_id,department_id,token_no,synthetic_patient_id,check_in_at,public_key) VALUES(%s,%s,%s,%s,%s,%s) RETURNING *',(session['id'],dep['id'],number,'SYN-'+secrets.token_hex(8).upper(),now,secrets.token_urlsafe(32))).fetchone()
+    conn.execute("INSERT INTO service_events(token_id,department_id,event_type,event_time) VALUES(%s,%s,'check_in',%s)",(row['id'],dep['id'],now))
+    if user: audit(conn,user,'check_in','queue_token',row['id'])
+    row['code']=dep['code']
+    from backend.services.prediction import predict_for_token
+    row['prediction']=predict_for_token(conn,row)
+    return row
+
+
 def attach_product(app,settings,current_user):
+    from backend.arrivals import attach_arrivals
+    attach_arrivals(app,settings,current_user,issue_token)
     @app.get('/departments')
     def departments(user=Depends(current_user)):
         with connection(settings) as conn:
@@ -154,21 +174,7 @@ def attach_product(app,settings,current_user):
     def checkin(body:CheckIn,user=Depends(current_user)):
         require(user,('admin','reception'))
         with connection(settings) as conn:
-            conn.execute('SELECT pg_advisory_xact_lock(72419023)')
-            dep=conn.execute('SELECT * FROM departments WHERE id=%s AND is_active',(body.department_id,)).fetchone()
-            if not dep: raise HTTPException(404,'Department unavailable.')
-            now=datetime.now(ZoneInfo(dep['timezone']))
-            conn.execute('INSERT INTO queue_sessions(department_id,service_date,opened_at) VALUES(%s,%s,%s) ON CONFLICT(department_id,service_date) DO NOTHING',(dep['id'],now.date(),now.replace(hour=0,minute=0,second=0,microsecond=0)))
-            session=conn.execute('SELECT * FROM queue_sessions WHERE department_id=%s AND service_date=%s FOR UPDATE',(dep['id'],now.date())).fetchone()
-            if session['closed_at']: raise HTTPException(409,'Today’s session has been closed.')
-            number=conn.execute('SELECT coalesce(max(token_no),0)+1 AS next FROM queue_tokens WHERE session_id=%s',(session['id'],)).fetchone()['next']
-            row=conn.execute('INSERT INTO queue_tokens(session_id,department_id,token_no,synthetic_patient_id,check_in_at,public_key) VALUES(%s,%s,%s,%s,%s,%s) RETURNING *',(session['id'],dep['id'],number,'SYN-'+secrets.token_hex(8).upper(),now,secrets.token_urlsafe(32))).fetchone()
-            conn.execute("INSERT INTO service_events(token_id,department_id,event_type,event_time) VALUES(%s,%s,'check_in',%s)",(row['id'],dep['id'],now))
-            audit(conn,user,'check_in','queue_token',row['id'])
-            row['code']=dep['code']
-            from backend.services.prediction import predict_for_token
-            row['prediction']=predict_for_token(conn,row)
-            return row
+            return issue_token(conn,body.department_id,user)
 
     def transition(conn,token_id,body,user):
         conn.execute('SELECT pg_advisory_xact_lock(72419023)')

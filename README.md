@@ -10,6 +10,28 @@ Choose **Admin → Explore the demo → Enter admin demo** for all features. Rec
 
 The full workspace includes live queue, patient check-in/status, department queue board, clinician availability/schedules, manager analytics, department/workload/peak-hour analysis, model performance, staffing simulation, alerts, CSV import, CSV/PDF reports, user/department administration and audit history. See the [delivery matrix and review guide](docs/DELIVERY.md).
 
+## Workspace enhancements
+
+Use **⌘/Ctrl K** to search the pages available to your role. **Compact** saves a denser layout in this browser; **Focus** hides navigation while retaining workspace search. Live queue and department board support status filtering, token search and sorting by arrival, token or estimated wait.
+
+Analytics includes quick date ranges and an operational pulse showing completion rate, the department with the longest average wait, and departments within a selectable average-wait target. These indicators use the selected cohort; the target is a local planning control. Updated styling includes responsive toolbars, keyboard focus states and reduced-motion support.
+
+Run `node frontend/tests/workspace-tools.cjs` with the local app running to check the new interactions and responsive layouts.
+
+## Appointments, QR arrivals and live updates
+
+Admin and Reception can open **Appointments**, publish half-hour arrival slots (1–20 places, up to 90 days ahead), book a place, cancel a booking and share its private QR link. Check-in opens 30 minutes before the slot and closes 30 minutes after it starts. Arrival slots reserve check-in capacity, not clinician time; checked-in appointments join the ordinary FIFO queue.
+
+In **Patient check-in → Generate today’s QR**, select a department to create a walk-in poster link. It expires at midnight in Asia/Colombo and can be revoked immediately. Patients scan, confirm arrival and open their private token page. Repeating an appointment check-in retrieves the same token; walk-in retry protection uses a browser-stored request ID and an atomic database record. The same browser reuses its token for that department QR; reception can issue an additional legitimate visit. Walk-in QR submissions are limited to 20 new arrivals per minute per code.
+
+Live queue, department board, clinician availability and patient status now receive server-sent events (SSE) after committed database changes. A reconnect refresh reconciles missed changes; a 15-second polling fallback runs while the stream is unavailable. Streams reconnect periodically to revalidate staff sessions. Event payloads contain no patient details or token links. The Next.js proxy forwards streams without buffering.
+
+**Local QR limitation:** `127.0.0.1` links work on this computer. Phone scanning requires a reachable deployed clinic URL configured in `FRONTEND_ORIGINS`; QR generation accepts only configured origins.
+
+After updating an existing installation, run `.venv/bin/python -m backend.bootstrap_product`, rebuild the frontend and restart the local API/frontend. Migration `006_arrivals_realtime.sql` adds booking/check-in tables and PostgreSQL notification triggers; no extra package is required.
+
+Validation: `.venv/bin/python -m backend.verify_local` and, with the app running, `node frontend/tests/arrivals.cjs`. The latter checks booking capacity, QR rendering, anonymous arrivals, retry protection, queue/patient pushes between independent browser sessions, revocation and mobile layouts.
+
 ## Start the existing local installation
 
 ```sh

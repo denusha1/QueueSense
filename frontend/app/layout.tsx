@@ -3,6 +3,7 @@ import "./globals.css";
 import "./polish.css";
 import "./experience.css";
 import "./buttons.css";
+import "./advanced.css";
 
 export const metadata: Metadata = {
   title: "QueueSense · Welcome",

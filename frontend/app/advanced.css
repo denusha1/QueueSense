@@ -1,0 +1,101 @@
+/* Operational workspace: quieter surfaces, stronger hierarchy, accessible tools. */
+.product-shell { background:radial-gradient(ellipse at 90% 0,#e7eee4,transparent 48%),#f5f7f4; }
+.product-body { max-width:1760px; margin-inline:auto; }
+.product-sidebar { background:radial-gradient(ellipse at 0 0,#264d40,transparent 60%),#122f29; }
+.product-top { position:sticky; top:0; z-index:20; }
+.product-shell .panel { border-color:#dfe7df; box-shadow:0 3px 5px #173b2903,0 14px 35px #173b2904; }
+.product-shell .page-heading { border:1px solid #ffffff20; box-shadow:0 16px 36px #15362912; overflow:hidden; }
+.product-shell .kpi-grid>article { transition:transform .2s,box-shadow .2s; }
+.product-shell .kpi-grid>article:hover { transform:translateY(-3px); box-shadow:0 12px 25px #1f4a3010; }
+.product-table tbody tr:hover { background:#f0f6f1; }
+.product-table th { white-space:nowrap; }
+.product-shell button:focus-visible,.command-dialog button:focus-visible,.command-dialog input:focus-visible { outline:3px solid #41987b; outline-offset:3px; }
+.workspace-tools { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:22px; }
+.workspace-tools button { display:flex; align-items:center; gap:9px; min-height:38px; border:1px solid #dbe5dc; border-radius:10px; padding:8px 12px; background:#ffffffb3; color:#486156; font-size:12px; }
+.workspace-tools .command-trigger { min-width:290px; justify-content:flex-start; }
+.workspace-tools kbd { margin-left:auto; font:10px ui-monospace,monospace; padding:4px 6px; background:#f0f3ed; border:1px solid #dce4d9; border-radius:5px; }
+.display-controls { display:flex; gap:7px; }
+.workspace-tools button[aria-pressed=true] { background:#183f34; color:#e1f1df; border-color:#183f34; }
+.command-dialog { width:min(560px,calc(100vw - 32px)); max-height:80dvh; padding:0; border:1px solid #d4e2d7; border-radius:20px; color:#234437; box-shadow:0 35px 100px #071d3350; }
+.command-dialog::backdrop { background:#10291e80; backdrop-filter:blur(7px); }
+.command-content { padding:22px; }
+.command-heading { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+.command-heading h2 { margin:0; font-size:20px; flex:1; }
+.command-heading button { border:0; background:#edf3ed; padding:8px; border-radius:8px; display:flex; color:#345444; }
+.command-dialog input { width:100%; background:#f3f6f1; border:1px solid #d3dfd2; padding:14px; border-radius:10px; color:#234437; }
+.command-results { max-height:45dvh; overflow:auto; padding:12px 0; }
+.command-results button { width:100%; display:flex; align-items:center; gap:14px; border:0; background:white; color:#315643; padding:13px 12px; border-radius:9px; text-align:left; }
+.command-results button span { flex:1; }
+.command-results button:hover,.command-results button:focus-visible { background:#edf5e8; }
+.command-dialog footer { font-size:11px; color:#617362; border-top:1px solid #e4eae0; padding-top:15px; }
+.date-shortcuts { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-bottom:12px; }
+.date-shortcuts>span { color:#5c7365; font-size:11px; margin-right:6px; }
+.date-shortcuts button { border:1px solid #dbe4d8; background:#fff; border-radius:7px; padding:7px 11px; color:#44624d; font-size:11px; }
+.date-shortcuts button:hover { background:#e7f0df; border-color:#9fbd96; }
+.date-shortcuts small { margin-left:auto; color:#67786a; font-size:10px; }
+.insight-panel { border:1px solid #d4e1cf; background:linear-gradient(115deg,#edf4e6,#f7f9f4 65%); border-radius:18px; padding:24px; margin-bottom:30px; }
+.insight-heading { display:flex; justify-content:space-between; gap:18px; align-items:center; }
+.insight-heading h2 { font-size:21px; letter-spacing:-.6px; margin:7px 0 0; }
+.insight-heading label { font-size:11px; color:#566d52; display:flex; align-items:center; gap:8px; }
+.insight-heading select { padding:8px; background:#fff; color:#34533c; border:1px solid #cadac3; border-radius:8px; }
+.insight-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px; margin-top:24px; }
+.insight-grid article { display:grid; grid-template-columns:28px 1fr; column-gap:8px; align-content:start; }
+.insight-grid article+article { border-left:1px solid #d4dfcd; padding-left:24px; }
+.insight-grid svg { color:#5a8051; grid-row:span 3; }
+.insight-grid span { font-size:11px; color:#56684f; }
+.insight-grid strong { font-size:28px; font-weight:650; letter-spacing:-1px; margin:8px 0; color:#26472b; }
+.insight-grid p { color:#62705d; font-size:11px; line-height:1.65; margin:0; }
+.queue-toolbar { flex-wrap:wrap; }
+.queue-toolbar select { max-width:100%; }
+.is-compact .page-heading { min-height:165px; }
+.is-compact .hero-actions { padding-top:15px; }
+.is-compact .workspace-art { height:140px; opacity:.35; }
+.is-compact .page-heading h1 { font-size:30px; }
+.is-compact .product-table td,.is-compact .product-table th { padding-top:9px; padding-bottom:9px; }
+.is-compact .kpi-grid>article { padding:16px; }
+.is-compact .product-body { padding-top:18px; }
+.is-focused .product-sidebar { display:none; }
+.is-focused .product-content { margin-left:0; width:100%; }
+@media(min-width:1000px) { .is-focused .product-body { max-width:1500px; } }
+@media(max-width:768px) {
+ .workspace-tools { flex-wrap:wrap; }
+ .workspace-tools .command-trigger { min-width:0; flex:1; }
+ .workspace-tools kbd { display:none; }
+ .display-controls button span { display:none; }
+ .insight-panel { padding:18px; }
+ .insight-grid { grid-template-columns:1fr; gap:18px; }
+ .insight-grid article+article { padding-left:0; padding-top:18px; border-left:0; border-top:1px solid #d4dfcd; }
+ .insight-heading { align-items:flex-start; flex-wrap:wrap; }
+ .insight-heading h2 { font-size:19px; }
+ .queue-toolbar>* { min-width:0; }
+ .queue-toolbar .search-input { flex-basis:100%; }
+ .date-shortcuts small { display:none; }
+ .product-top { position:relative; }
+}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+/* Appointment planning and touch-friendly self arrival. */
+.view-appointments { --page-accent:#cbeedc; --page-deep:#1e3f3d; --page-glow:#427b74; }
+.arrival-intro { display:flex; align-items:center; gap:17px; margin-bottom:24px; }
+.arrival-intro>svg { flex-shrink:0; color:#2f765f; padding:14px; box-sizing:content-box; background:#e2eee4; border-radius:16px; }
+.arrival-intro h2 { margin:0 0 7px; font-size:22px; letter-spacing:-.6px; }
+.arrival-intro p { color:#62776a; font-size:12px; line-height:1.7; margin:0; }
+.appointment-slot { display:flex; align-items:center; gap:16px; border:1px solid #dce7df; background:#f7faf6; border-radius:13px; padding:15px; margin-top:12px; }
+.appointment-slot>div:nth-child(2) { flex:1; }
+.appointment-slot strong { font-size:13px; }
+.appointment-slot p { font-size:11px; color:#657c6a; margin:6px 0 0; }
+.slot-time { font-size:20px; font-weight:700; color:#315d4b; border-right:1px solid #d7e4d7; padding-right:16px; }
+.slot-time small { display:block; font-size:10px; font-weight:400; margin-top:5px; color:#71816d; }
+.slot-form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.arrival-qr { display:flex; gap:28px; align-items:center; background:linear-gradient(120deg,#eef5e8,#f8faf6); border:1px solid #dae6d4; border-radius:15px; padding:22px; margin:20px 0; }
+.qr-image { background:white; border-radius:12px; padding:7px; flex-shrink:0; width:204px; height:204px; }
+.qr-image img { display:block; }
+.arrival-qr h3 { font-size:21px; margin:10px 0; overflow-wrap:anywhere; }
+.arrival-qr p { color:#5c735f; font-size:12px; line-height:1.8; }
+.arrival-qr .button-row { flex-wrap:wrap; }
+.self-checkin-card h1 { font-size:34px; line-height:1.2; letter-spacing:-1px; margin:18px 0 25px; }
+.self-checkin-card .explanation { text-align:left; margin:24px 0; }
+.self-checkin-card .solid { margin-top:24px; }
+.booking-reference { display:inline-block; background:#e6efde; padding:8px 13px; border-radius:8px; letter-spacing:1px; font-weight:600; }
+.kiosk-panel { margin-top:24px; }
+.kiosk-panel .config-row { flex-wrap:wrap; gap:12px; }
+@media(max-width:650px) { .arrival-qr { flex-direction:column; align-items:flex-start; padding:17px; } .qr-image { align-self:center; } .appointment-slot { flex-wrap:wrap; gap:12px; } .appointment-slot .solid { width:100%; } .arrival-intro h2 { font-size:19px; } .slot-form-row { grid-template-columns:1fr; } }
