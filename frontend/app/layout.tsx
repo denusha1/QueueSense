@@ -5,6 +5,7 @@ import "./experience.css";
 import "./buttons.css";
 import "./advanced.css";
 import "./premium.css";
+import "./theme.css";
 import { ExperienceEffects } from "../components/experience-effects";
 
 export const metadata: Metadata = {

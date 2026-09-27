@@ -1,0 +1,89 @@
+/* Shared navy and lime brand palette. Semantic warning/error colors stay distinct. */
+:root {
+  --navy: #101f3d;
+  --navy-light: #243c65;
+  --lime: #c5f35b;
+  --lime-hover: #d6ff7b;
+  --lime-soft: #f0f8dd;
+  --ink: #172947;
+  --muted: #62718a;
+  --line: #dde3ed;
+  --canvas: #f3f5f9;
+  --accent: #49651d;
+  --button-ink: var(--navy);
+  --button-border: var(--line);
+  --button-focus: #718f29;
+}
+::selection { background: var(--lime); color: var(--navy); }
+input, select, textarea { accent-color: var(--navy); }
+body, .shell, .dataset-page { background: var(--canvas); color: var(--ink); }
+.product-shell { --page-accent: var(--lime); --page-deep: var(--navy); --page-glow: var(--navy-light); background: radial-gradient(ellipse at 90% 0, #e6ecf6, transparent 45%), var(--canvas); }
+.story, .product-sidebar, .patient-page { background: radial-gradient(ellipse at 85% 0, var(--navy-light), transparent 65%), var(--navy); }
+.product-shell .page-heading { background: radial-gradient(ellipse at 95% -25%, var(--navy-light), transparent 62%), var(--navy); border-color: #34496b; }
+.brand-icon, .product-sidebar .brand-icon, .story .brand-icon { background: var(--lime); color: var(--navy); border-color: var(--lime); box-shadow: 0 0 24px #c5f35b18; }
+.story h1>span, .story h1 em, .story .eyebrow, .story .positive, .story .metric-icon, .story .features svg, .patient-brand svg { color: var(--lime); }
+.story .intro, .story .metric-grid p, .story .small-label, .story-footer, .care-journey span, .story .features { color: #bfcae0; }
+.story .snapshot { background: linear-gradient(135deg, #ffffff0d, #ffffff04); border-color: #ffffff24; }
+.story .status-dot, .sample-badge>span, .chart-header i.mint { background: var(--lime); box-shadow: 0 0 0 4px #c5f35b10; }
+.story .sample-badge { color: var(--lime); background: #c5f35b0d; border-color: #c5f35b30; }
+.chart-header i { background: #8da7d1; }
+.clinic-identity>span { background: var(--navy-light); color: var(--lime); border-color: #ffffff22; }
+.product-sidebar nav button { color: #c3cee2; }
+.product-sidebar nav button svg { color: #aebfda; }
+.product-sidebar nav button.active { background: var(--lime); color: var(--navy); border-color: var(--lime); box-shadow: 0 4px 14px #08132725; }
+.product-sidebar nav button.active svg { color: var(--navy); }
+.product-sidebar nav button.active::before, .product-sidebar nav button.active::after, .product-sidebar nav i { background: var(--navy); box-shadow: none; }
+.product-top { background: #f3f5f9e8; border-color: var(--line); }
+.product-top .connection-dot { background: #759b27; box-shadow: 0 0 0 4px #759b2712; }
+.account-avatar { background: var(--lime-soft); color: var(--navy); }
+:is(.solid,.primary-button), .page-heading .refresh-button { background: var(--lime); color: var(--navy); border-color: var(--lime); text-shadow: none; box-shadow: 0 4px 12px #101f3d12; }
+:is(.outline,.demo-button,.workspace-signout), .product-top .workspace-signout { color: var(--navy); background: #fff; border-color: #cdd6e5; }
+.demo-button>svg:first-child, .text-link, .text-button, .dataset-entry-link { color: var(--navy); }
+.mobile-menu-toggle { color: var(--lime); background: #ffffff0a; border-color: #ffffff30; }
+.mobile-menu-toggle[aria-expanded=true] { background: var(--lime); color: var(--navy); border-color: var(--lime); }
+.welcome-icon, .form-icon, .view-checkin .form-icon, .metric-symbol, .arrival-steps b { background: var(--lime-soft); color: var(--navy); border-color: #d9e6bc; }
+.welcome-copy h2, .role-card .role-name, .role-card.selected .role-name, .role-card.selected svg, .panel h2, .panel h3, .section-heading h2, .patient-card h1, .patient-card h2, .dataset-heading h1, .dataset-metrics strong, .department-numbers strong, .token-receipt>strong { color: var(--navy); }
+.role-card.selected { background: var(--lime-soft); border-color: #8ea951; box-shadow: 0 0 0 3px #c5f35b20; }
+.role-card.selected .radio-mark { color: var(--navy); background: var(--lime); border-color: #8ea951; box-shadow: none; }
+.demo-pill, .preview-notice, .dataset-notice, .dataset-method { background: var(--lime-soft); color: #435623; border-color: #d9e6bc; }
+.privacy, .explanation, .period-chip, .display-controls { background: #edf1f7; color: var(--muted); border-color: var(--line); }
+.workspace-tools button[aria-pressed=true] { background: var(--navy); color: var(--lime); border-color: var(--navy); }
+.input-wrap:focus-within, .search-input:focus-within, :is(.product-field input,.product-field select,.product-field textarea,.queue-toolbar select,.product-table select):focus { border-color: #718f29; box-shadow: 0 0 0 4px #c5f35b30; }
+:is(button,a,input,select,textarea,[tabindex]):focus-visible, .product-shell button:focus-visible, .command-dialog button:focus-visible, .command-dialog input:focus-visible { outline-color: #718f29; }
+.product-sidebar button:focus-visible, .page-heading button:focus-visible { outline-color: var(--lime); }
+.product-shell .kpi-grid .metric-tone-0 { background: radial-gradient(ellipse at 100% 0, var(--navy-light), transparent 90%), var(--navy); border-color: #34496b; }
+.metric-tone-0 .metric-symbol { background: #c5f35b15; color: var(--lime); border-color: #c5f35b30; }
+.metric-tone-0 .metric-spark { color: var(--lime); }
+.product-shell .kpi-grid .metric-tone-1 { background: linear-gradient(135deg, #eaf5cd, #f6faec); border-color: #d9e6bc; }
+.metric-tone-1 .metric-symbol { color: #49651d; }
+.metric-spark { color: #648329; }
+.product-shell .kpi-grid .metric-card::before { background: linear-gradient(90deg, transparent, #a6c95380, transparent); }
+.product-shell .kpi-grid .metric-card:not(.metric-tone-0) strong { color: var(--navy); }
+.bar-row i { background: linear-gradient(90deg, #7f9f32, var(--lime)); }
+.analytics-charts .panel h2::before { background: var(--lime); }
+.insight-panel { background: linear-gradient(115deg, var(--lime-soft), #fbfcf7); border-color: #d9e6bc; }
+.insight-heading h2, .insight-grid strong { color: var(--navy); }
+.insight-grid svg, .insight-heading .section-label { color: #587326; }
+.insight-grid span, .insight-grid p { color: #566344; }
+.product-table th, .dataset-table th { background: #f0f3f8; color: var(--muted); }
+.product-table td strong, .dataset-table td strong, .board-token>strong { color: var(--navy); }
+.product-table tbody tr:hover { background: #f5f8ef; }
+.view-live .product-table td:first-child strong { color: var(--navy); background: var(--lime-soft); border-color: #d9e6bc; }
+.board-token { background: #fff; border-left-color: #9cbe46; }
+.token-actions a { color: var(--navy); background: #eef2f8; border-color: var(--line); }
+:is(.product-table button,.token-actions button):not([data-intent]):not(.subtle) { color: var(--navy); background: var(--lime-soft); border-color: #d9e6bc; }
+.patient-card { background: radial-gradient(ellipse at 50% 0, var(--lime-soft), transparent 65%), #fff; }
+.patient-wait, .patient-turn, .self-checkin-card .booking-reference { background: var(--lime-soft); color: var(--navy); border-color: #d9e6bc; }
+.patient-wait p, .patient-turn p { color: #566344; }
+.view-checkin .token-receipt { background: radial-gradient(ellipse at 50% 0, var(--lime-soft), transparent 80%), #fff; border-color: #a1b677; }
+.dataset-nav .brand, .back-link, .command-heading, .command-heading h2, .preview-dialog h2 { color: var(--navy); }
+.command-results button:hover, .command-results button:focus-visible { background: var(--lime-soft); color: var(--navy); border-color: #d9e6bc; }
+.reading-progress { background: var(--lime); box-shadow: 0 0 8px #c5f35b40; }
+.return-to-top { color: var(--navy); border-color: var(--line); }
+@media (hover:hover) {
+  :is(.solid,.primary-button):hover:not(:disabled), .page-heading .refresh-button:hover:not(:disabled) { background: var(--lime-hover); color: var(--navy); border-color: var(--lime-hover); box-shadow: 0 6px 18px #101f3d18; }
+  :is(.outline,.demo-button,.workspace-signout):hover:not(:disabled), .date-shortcuts button:hover, .return-to-top:hover { background: var(--lime-soft); color: var(--navy); border-color: #a1b677; }
+  :is(.product-table button,.token-actions button):not([data-intent]):not(.subtle):hover:not(:disabled) { background: #e2efc3; border-color: #a1b677; }
+  .role-card:hover { border-color: #a1b677; }
+  .product-sidebar nav button:not(.active):hover { background: #ffffff0c; color: #fff; }
+}

@@ -1,7 +1,7 @@
 'use client';
 import { useId, useState } from 'react';
 type Row = Record<string, unknown>;
-const colors = ['#098578', '#bb8745'];
+const colors = ['#172947', '#739629'];
 const number = (value: unknown) => Number(value) || 0;
 const format = (value: unknown) => number(value).toLocaleString('en-US', { maximumFractionDigits: 1 });
 

@@ -56,11 +56,11 @@ export function Welcome() {
           </div>
           <div className="chart-header"><span>Patient flow</span><div><i /> Arrivals <i className="mint" /> Completed</div></div>
           <svg className="chart" viewBox="0 0 400 104" role="img" aria-label="Illustrative patient flow chart, not live clinic data">
-            <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7de0c1" stopOpacity=".2" /><stop offset="100%" stopColor="#7de0c1" stopOpacity="0" /></linearGradient></defs>
+            <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#c5f35b" stopOpacity=".2" /><stop offset="100%" stopColor="#c5f35b" stopOpacity="0" /></linearGradient></defs>
             {[20,50,80].map(y => <line key={y} x1="0" x2="400" y1={y} y2={y} stroke="#ffffff10" strokeDasharray="3 5" />)}
             <path d="M0 83 C25 83 35 59 60 64 S95 87 120 56 S155 30 180 45 S215 66 240 34 S275 10 300 25 S345 61 370 35 S390 25 400 15 L400 104 L0 104 Z" fill="url(#fill)" />
-            <path d="M0 68 C25 68 40 39 65 45 S95 60 120 31 S150 20 175 28 S210 45 235 21 S275 5 300 18 S335 33 360 17 S390 20 400 7" fill="none" stroke="#6d9992" strokeWidth="2" strokeDasharray="5 5" />
-            <path d="M0 83 C25 83 35 59 60 64 S95 87 120 56 S155 30 180 45 S215 66 240 34 S275 10 300 25 S345 61 370 35 S390 25 400 15" fill="none" stroke="#86dfbf" strokeWidth="2.5" />
+            <path d="M0 68 C25 68 40 39 65 45 S95 60 120 31 S150 20 175 28 S210 45 235 21 S275 5 300 18 S335 33 360 17 S390 20 400 7" fill="none" stroke="#8da7d1" strokeWidth="2" strokeDasharray="5 5" />
+            <path d="M0 83 C25 83 35 59 60 64 S95 87 120 56 S155 30 180 45 S215 66 240 34 S275 10 300 25 S345 61 370 35 S390 25 400 15" fill="none" stroke="#c5f35b" strokeWidth="2.5" />
           </svg>
           <div className="chart-times"><span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span></div>
           <div className="snapshot-bottom"><span><span className="status-dot" /> A little visibility makes a big difference.</span><Activity size={16} /></div>
