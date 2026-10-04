@@ -29,6 +29,7 @@ class Settings:
     secure_cookie: bool = False
     demo_enabled: bool = False
     session_seconds: int = 8 * 60 * 60
+    automation_enabled: bool = True
 
     @classmethod
     def from_env(cls):
@@ -42,7 +43,7 @@ class Settings:
             raise RuntimeError('Production requires HTTPS origins and disabled demo login')
         if not origins:
             raise RuntimeError('At least one frontend origin is required')
-        return cls(url, origins, production, demo)
+        return cls(url, origins, production, demo, automation_enabled=os.environ.get('ENABLE_AUTOMATION','true')=='true')
 
 
 @contextmanager
@@ -76,16 +77,17 @@ class DemoRequest(BaseModel):
 
 
 WORKSPACES = {
-    'reception': {'title': 'Reception workspace', 'description': 'Your place to welcome arrivals and coordinate the queue.', 'capabilities': ['Patient check-in', 'Queue coordination', 'Token status'], 'next': 'Live queue operations are the next planned delivery.'},
-    'doctor': {'title': 'Doctor workspace', 'description': 'A focused space for your service queue and availability.', 'capabilities': ['Call next token', 'Record service events', 'Manage availability'], 'next': 'Patient service controls will follow the queue foundation.'},
-    'manager': {'title': 'Manager workspace', 'description': 'Understand patient flow and plan clinic capacity.', 'capabilities': ['Operational analytics', 'Bottleneck insights', 'Staffing scenarios'], 'next': 'Live analytics will follow operational data capture.'},
-    'admin': {'title': 'Administrator workspace', 'description': 'Manage access and the foundations of your clinic.', 'capabilities': ['User and role management', 'Department configuration', 'Audit history'], 'next': 'Administration controls will arrive in their planned step.'},
+    'reception': {'title': 'Reception workspace', 'description': 'Your place to welcome arrivals and coordinate the queue.', 'capabilities': ['Patient check-in', 'Queue coordination', 'Token status'], 'next': 'Open your live queue to coordinate today’s arrivals.'},
+    'doctor': {'title': 'Doctor workspace', 'description': 'A focused space for your service queue and availability.', 'capabilities': ['Call next token', 'Record service events', 'Manage availability'], 'next': 'Open your assigned clinician queue to call and serve patients.'},
+    'manager': {'title': 'Manager workspace', 'description': 'Understand patient flow and plan clinic capacity.', 'capabilities': ['Operational analytics', 'Bottleneck insights', 'Staffing scenarios'], 'next': 'Explore analytics, recommendations, reports and observed prediction performance.'},
+    'admin': {'title': 'Administrator workspace', 'description': 'Manage access and the foundations of your clinic.', 'capabilities': ['User and role management', 'Department configuration', 'Audit history'], 'next': 'Manage clinic access, review audit history and monitor operations.'},
 }
 
 
 def create_app(settings=None):
     settings = settings or Settings.from_env()
-    app = FastAPI(title='QueueSense API', version='1.0.0')
+    from backend.automation import lifespan,attach_automation
+    app = FastAPI(title='QueueSense API', version='1.0.0',lifespan=lifespan)
     app.state.settings = settings
 
     @app.middleware('http')
@@ -95,6 +97,10 @@ def create_app(settings=None):
         response = await call_next(request)
         response.headers['Cache-Control'] = 'no-store'
         response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Referrer-Policy'] = 'no-referrer'
+        response.headers['X-Frame-Options'] = 'DENY'
+        if settings.secure_cookie:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000'
         return response
 
     @app.exception_handler(psycopg.Error)
@@ -151,6 +157,8 @@ def create_app(settings=None):
                 if not demo and HASHER.check_needs_rehash(user['password_hash']):
                     conn.execute('UPDATE users SET password_hash=%s WHERE id=%s', (HASHER.hash(password), user['id']))
                 result = issue_session(conn, user, response, request.cookies.get(COOKIE))
+                from backend.product import audit
+                audit(conn,user,'sign_in','user',user['id'],{'demo':demo})
         # Raise outside the transaction so failed-attempt records are committed.
         if error:
             raise error
@@ -185,7 +193,10 @@ def create_app(settings=None):
         token = request.cookies.get(COOKIE)
         if token:
             with connection(settings) as conn:
-                conn.execute('DELETE FROM auth_sessions WHERE token_hash=%s', (digest(token),))
+                row=conn.execute('DELETE FROM auth_sessions WHERE token_hash=%s RETURNING user_id', (digest(token),)).fetchone()
+                if row:
+                    from backend.product import audit
+                    audit(conn,{'id':str(row['user_id'])},'sign_out','user',row['user_id'])
         response.delete_cookie(COOKIE, path='/', secure=settings.secure_cookie, httponly=True, samesite='lax')
         return {'ok': True}
 
@@ -197,4 +208,9 @@ def create_app(settings=None):
 
     from backend.product import attach_product
     attach_product(app, settings, current_user)
+    from backend.experience import attach_experience
+    attach_experience(app, settings, current_user)
+    from backend.planning import attach_planning
+    attach_planning(app, settings, current_user)
+    attach_automation(app, settings, current_user)
     return app

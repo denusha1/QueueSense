@@ -26,7 +26,7 @@ def analytics(conn, start, end, department=None, staff=None, weekday=None, hour_
     where, args = filters(start,end,department,staff,weekday,hour_from,hour_to)
     aggregates = f'''count(*) AS arrivals, count(*) FILTER(WHERE t.status='completed') AS completed,
 count(*) FILTER(WHERE t.status='waiting') AS waiting, count(*) FILTER(WHERE t.status='cancelled') AS cancelled,
-count(*) FILTER(WHERE t.status='no_show') AS no_shows, avg({WAIT}) AS average_wait,
+count(*) FILTER(WHERE t.status='no_show') AS no_shows, count(t.service_start_at) AS measured_waits, avg({WAIT}) AS average_wait,
 percentile_cont(.5) WITHIN GROUP(ORDER BY {WAIT}) AS median_wait,
 percentile_cont(.9) WITHIN GROUP(ORDER BY {WAIT}) AS p90_wait, avg({SERVICE}) AS average_service,
 100.0*count(*) FILTER(WHERE t.status='cancelled' AND s.closed_at IS NOT NULL)/nullif(count(*) FILTER(WHERE s.closed_at IS NOT NULL),0) AS cancellation_rate,
@@ -45,4 +45,7 @@ percentile_cont(.9) WITHIN GROUP(ORDER BY {WAIT}) AS p90_wait, avg({SERVICE}) AS
     # Completion throughput is explicitly grouped by completion hour for the arrival cohort.
     hourly = conn.execute("SELECT extract(hour FROM t.check_in_at AT TIME ZONE d.timezone)::int AS hour,count(*) AS arrivals"+BASE+where+' GROUP BY 1 ORDER BY 1',args).fetchall()
     completions = conn.execute("SELECT extract(hour FROM t.completed_at AT TIME ZONE d.timezone)::int AS hour,count(*) AS completed"+BASE+where+" AND t.status='completed' GROUP BY 1 ORDER BY 1",args).fetchall()
-    return dict(summary=summary,departments=departments,trends=trends,heatmap=heatmap,workload=workload,distribution=distribution,hourly=hourly,completions=completions,definition='Arrival-date cohort. Wait = service start − check-in. Finalized rates use closed sessions only. Workload is a cohort proxy; service may spill beyond selected arrival hours.')
+    from backend.services.insights import recommendations
+    report=dict(summary=summary,departments=departments,trends=trends,heatmap=heatmap,workload=workload,distribution=distribution,hourly=hourly,completions=completions,definition='Arrival-date cohort. Wait = service start − check-in. Finalized rates use closed sessions only. Workload is a cohort proxy; service may spill beyond selected arrival hours.')
+    report['insights']=recommendations(report)
+    return report

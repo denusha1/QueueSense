@@ -36,12 +36,12 @@ def test_url():
 @pytest.fixture
 def client(test_url):
     with psycopg.connect(test_url) as conn:
-        conn.execute('TRUNCATE users, auth_sessions, login_attempts, departments, audit_logs, model_runs CASCADE')
+        conn.execute('TRUNCATE users, auth_sessions, login_attempts, departments, audit_logs, model_runs, automation_state CASCADE')
         password_hash = HASHER.hash(PASSWORD)
         for role in ('reception', 'doctor', 'manager', 'admin'):
             for domain in ('staff.example.test', 'demo.queuesense.test'):
                 conn.execute('INSERT INTO users(email,password_hash,role) VALUES(%s,%s,%s)', (f'{role}@{domain}', password_hash, role))
-    with TestClient(create_app(Settings(test_url, (ORIGIN,), demo_enabled=True))) as client:
+    with TestClient(create_app(Settings(test_url, (ORIGIN,), demo_enabled=True,automation_enabled=False))) as client:
         yield client
 
 

@@ -12,7 +12,7 @@ from typing import Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, Query, Request, Response
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from psycopg import sql
 
 from backend.app import connection, HASHER
@@ -31,6 +31,21 @@ class Input(BaseModel):
 
 class CheckIn(Input):
     department_id: uuid.UUID
+    priority_class: Literal['standard','expedited']='standard'
+    priority_reason: str=Field(default='',max_length=160)
+    service_type: Literal['general_consultation','follow_up','document_review','accessible_consultation']='general_consultation'
+    required_language: Literal['en','ta','si']|None=None
+    preferred_staff_id:uuid.UUID|None=None
+    continuity_required:bool=False
+
+    @model_validator(mode='after')
+    def continuity(self):
+        self.priority_reason=self.priority_reason.strip()
+        if self.priority_class=='expedited' and len(self.priority_reason)<3:
+            raise ValueError('Record a clinic policy reference or staff authorization for expedited priority.')
+        if self.continuity_required and self.preferred_staff_id is None:
+            raise ValueError('Choose a doctor when continuity is required.')
+        return self
 
 
 class Change(Input):
@@ -96,8 +111,9 @@ def require(user, roles):
         raise HTTPException(403,'Your account does not have permission for this action.')
 
 
-def audit(conn,user,action,entity,entity_id):
-    conn.execute('INSERT INTO audit_logs(user_id,action,entity_type,entity_id) VALUES(%s,%s,%s,%s)',(user['id'],action,entity,entity_id))
+def audit(conn,user,action,entity,entity_id,details=None,actor_type=None):
+    from psycopg.types.json import Jsonb
+    conn.execute('INSERT INTO audit_logs(user_id,action,entity_type,entity_id,actor_type,details) VALUES(%s,%s,%s,%s,%s,%s)',(user['id'] if user else None,action,entity,entity_id,actor_type or ('staff' if user else 'system'),Jsonb(details or {})))
 
 
 def station(conn, staff_id, user):
@@ -117,34 +133,45 @@ def active_staff(conn,department_id):
 
 
 def queue_snapshot(conn,department=None):
-    query = """SELECT t.id,t.department_id,t.staff_id,t.token_no,t.status,t.check_in_at,t.called_at,t.service_start_at,t.completed_at,t.public_key,d.code,d.name AS department,st.display_name AS clinician
+    query = """SELECT t.id,t.department_id,t.staff_id,t.token_no,t.status,t.priority_class,t.priority_reason,t.initial_wait_minutes,t.initial_prediction_version,t.check_in_at,t.called_at,t.service_start_at,t.completed_at,t.public_key,d.code,d.name AS department,st.display_name AS clinician
 FROM queue_tokens t JOIN queue_sessions s ON s.id=t.session_id JOIN departments d ON d.id=t.department_id LEFT JOIN staff st ON st.id=t.staff_id
-WHERE s.service_date=(now() AT TIME ZONE d.timezone)::date AND (%s::uuid IS NULL OR d.id=%s) ORDER BY t.check_in_at,t.token_no LIMIT 500"""
+WHERE s.service_date=(now() AT TIME ZONE d.timezone)::date AND (%s::uuid IS NULL OR d.id=%s) ORDER BY CASE t.priority_class WHEN 'expedited' THEN 0 ELSE 1 END,t.check_in_at,t.token_no LIMIT 500"""
     rows=conn.execute(query,(department,department)).fetchall()
-    estimates={}; positions={}
+    from backend.services.prediction import live_predictions
+    estimates={}
     for row in rows:
         dep=row['department_id']
-        if dep not in estimates: estimates[dep]=(service_estimate(conn,dep),active_staff(conn,dep))
-        duration,count=estimates[dep]
+        if dep not in estimates: estimates[dep]=live_predictions(conn,dep)
         if row['status']=='waiting':
-            ahead=positions.get(dep,0);positions[dep]=ahead+1
-            row['position']=ahead+1;row['estimated_wait']=round(ahead*duration/count,1) if count else None
-        else: row['position']=None;row['estimated_wait']=None
+            prediction=estimates[dep].get(str(row['id']),{})
+            row['position']=prediction.get('position');row['patients_ahead']=prediction.get('patients_ahead');row['estimated_wait']=prediction.get('minutes');row['prediction_source']=prediction.get('source');row['prediction_notice']=prediction.get('reason')
+        else:
+            row['position']=None;row['patients_ahead']=None;row['estimated_wait']=None
+        row['actual_wait']=round((row['service_start_at']-row['check_in_at']).total_seconds()/60,1) if row['service_start_at'] else None
+        row['prediction_error']=round(row['actual_wait']-row['initial_wait_minutes'],1) if row['actual_wait'] is not None and row['initial_wait_minutes'] is not None else None
     return rows
 
 
-def issue_token(conn,department_id,user=None):
+def issue_token(conn,department_id,user=None,requirements=None):
     conn.execute('SELECT pg_advisory_xact_lock(72419023)')
     dep=conn.execute('SELECT * FROM departments WHERE id=%s AND is_active',(department_id,)).fetchone()
     if not dep: raise HTTPException(404,'Department unavailable.')
+    requirements=requirements or {}
+    preferred=requirements.get('preferred_staff_id')
+    if preferred:
+        doctor=conn.execute("SELECT * FROM staff WHERE id=%s AND department_id=%s AND is_active AND staff_type='doctor'",(preferred,department_id)).fetchone()
+        if not doctor:raise HTTPException(422,'Choose an active doctor in this department.')
+        from backend.planning import eligible
+        if requirements.get('continuity_required') and not eligible(doctor,requirements):
+            raise HTTPException(422,'The preferred doctor does not support the required service or language.')
     now=datetime.now(ZoneInfo(dep['timezone']))
     conn.execute('INSERT INTO queue_sessions(department_id,service_date,opened_at) VALUES(%s,%s,%s) ON CONFLICT(department_id,service_date) DO NOTHING',(dep['id'],now.date(),now.replace(hour=0,minute=0,second=0,microsecond=0)))
     session=conn.execute('SELECT * FROM queue_sessions WHERE department_id=%s AND service_date=%s FOR UPDATE',(dep['id'],now.date())).fetchone()
     if session['closed_at']: raise HTTPException(409,'Today’s session has been closed.')
     number=conn.execute('SELECT coalesce(max(token_no),0)+1 AS next FROM queue_tokens WHERE session_id=%s',(session['id'],)).fetchone()['next']
-    row=conn.execute('INSERT INTO queue_tokens(session_id,department_id,token_no,synthetic_patient_id,check_in_at,public_key) VALUES(%s,%s,%s,%s,%s,%s) RETURNING *',(session['id'],dep['id'],number,'SYN-'+secrets.token_hex(8).upper(),now,secrets.token_urlsafe(32))).fetchone()
+    row=conn.execute('INSERT INTO queue_tokens(session_id,department_id,token_no,synthetic_patient_id,check_in_at,public_key,service_type,required_language,preferred_staff_id,continuity_required,priority_class,priority_reason) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *',(session['id'],dep['id'],number,'SYN-'+secrets.token_hex(8).upper(),now,secrets.token_urlsafe(32),requirements.get('service_type','general_consultation'),requirements.get('required_language'),preferred,requirements.get('continuity_required',False),requirements.get('priority_class','standard'),requirements.get('priority_reason',''))).fetchone()
     conn.execute("INSERT INTO service_events(token_id,department_id,event_type,event_time) VALUES(%s,%s,'check_in',%s)",(row['id'],dep['id'],now))
-    if user: audit(conn,user,'check_in','queue_token',row['id'])
+    audit(conn,user,'check_in','queue_token',row['id'],{'status':'waiting','department_id':str(dep['id']),'priority_class':row['priority_class'],'priority_reason':row['priority_reason']},actor_type='staff' if user else 'patient')
     row['code']=dep['code']
     from backend.services.prediction import predict_for_token
     row['prediction']=predict_for_token(conn,row)
@@ -174,7 +201,7 @@ def attach_product(app,settings,current_user):
     def checkin(body:CheckIn,user=Depends(current_user)):
         require(user,('admin','reception'))
         with connection(settings) as conn:
-            return issue_token(conn,body.department_id,user)
+            return issue_token(conn,body.department_id,user,body.model_dump())
 
     def transition(conn,token_id,body,user):
         conn.execute('SELECT pg_advisory_xact_lock(72419023)')
@@ -187,6 +214,8 @@ def attach_product(app,settings,current_user):
             clinician=station(conn,staff_id,user)
             if clinician['department_id']!=token['department_id']: raise HTTPException(409,'Clinician belongs to another department.')
         if body.status=='called':
+            from backend.planning import eligible
+            if staff_id and not eligible(clinician,token):raise HTTPException(409,'This doctor does not match the visit’s service, language or continuity requirements.')
             if not staff_id: raise HTTPException(422,'Choose a clinician to call this token.')
             availability=conn.execute("SELECT status FROM staff_availability WHERE staff_id=%s AND (changed_at AT TIME ZONE 'Asia/Colombo')::date=(now() AT TIME ZONE 'Asia/Colombo')::date ORDER BY changed_at DESC LIMIT 1",(staff_id,)).fetchone()
             if not availability or availability['status']!='available': raise HTTPException(409,'Set this clinician to available first.')
@@ -201,7 +230,7 @@ def attach_product(app,settings,current_user):
         conn.execute('INSERT INTO service_events(token_id,department_id,staff_id,event_type,event_time) VALUES(%s,%s,%s,%s,%s)',(token_id,row['department_id'],staff_id,event,now))
         if staff_id and body.status in ('called','completed','cancelled','no_show'):
             conn.execute('INSERT INTO staff_availability(staff_id,status,changed_at) VALUES(%s,%s,%s)',(staff_id,'busy' if body.status=='called' else 'available',now))
-        audit(conn,user,body.status,'queue_token',token_id)
+        audit(conn,user,body.status,'queue_token',token_id,{'from_status':token['status'],'to_status':body.status,'staff_id':str(staff_id) if staff_id else None})
         return row
 
     @app.patch('/queue/{token_id}/status')
@@ -215,8 +244,10 @@ def attach_product(app,settings,current_user):
         with connection(settings) as conn:
             conn.execute('SELECT pg_advisory_xact_lock(72419023)')
             clinician=station(conn,staff_id,user)
-            row=conn.execute("SELECT t.id FROM queue_tokens t JOIN queue_sessions s ON s.id=t.session_id WHERE t.department_id=%s AND t.status='waiting' AND s.service_date=(now() AT TIME ZONE 'Asia/Colombo')::date ORDER BY t.check_in_at,t.token_no LIMIT 1 FOR UPDATE OF t",(clinician['department_id'],)).fetchone()
-            if not row:raise HTTPException(409,'No patients waiting in this department.')
+            from backend.planning import eligible
+            candidates=conn.execute("SELECT t.* FROM queue_tokens t JOIN queue_sessions s ON s.id=t.session_id WHERE t.department_id=%s AND t.status='waiting' AND s.service_date=(now() AT TIME ZONE 'Asia/Colombo')::date ORDER BY CASE t.priority_class WHEN 'expedited' THEN 0 ELSE 1 END,t.check_in_at,t.token_no FOR UPDATE OF t",(clinician['department_id'],)).fetchall()
+            row=next((t for t in candidates if eligible(clinician,t)),None)
+            if not row:raise HTTPException(409,'No eligible patients waiting for this doctor.')
             return transition(conn,row['id'],Change(status='called',staff_id=staff_id),user)
 
     @app.patch('/staff/{staff_id}/availability')
@@ -241,6 +272,20 @@ def attach_product(app,settings,current_user):
             return {'ok':True}
 
     public_hits=[]
+    @app.get('/patient/{key}/qr')
+    def tracking_qr(key:str,origin:str):
+        if origin not in settings.origins:raise HTTPException(422,'Use a configured clinic URL.')
+        if not 30<=len(key)<=80:raise HTTPException(404,'Token not found.')
+        with connection(settings) as conn:
+            if not conn.execute('SELECT 1 FROM queue_tokens WHERE public_key=%s',(key,)).fetchone():raise HTTPException(404,'Token not found.')
+        from reportlab.graphics.barcode.qr import QrCodeWidget
+        from reportlab.graphics.shapes import Drawing
+        from reportlab.graphics import renderSVG
+        qr=QrCodeWidget(origin+'/patient/'+key,barLevel='M')
+        x0,y0,x1,y1=qr.getBounds()
+        drawing=Drawing(256,256,transform=[256/(x1-x0),0,0,256/(y1-y0),0,0]);drawing.add(qr)
+        return Response(renderSVG.drawToString(drawing),media_type='image/svg+xml')
+
     @app.get('/patient/{key}')
     def patient(key:str):
         now=time.monotonic()
@@ -249,11 +294,12 @@ def attach_product(app,settings,current_user):
         public_hits.append(now)
         if not 30<=len(key)<=80:raise HTTPException(404,'Token not found.')
         with connection(settings) as conn:
-            row=conn.execute('SELECT t.id,t.department_id,t.token_no,t.status,t.check_in_at,d.name AS department,d.code FROM queue_tokens t JOIN departments d ON d.id=t.department_id WHERE public_key=%s',(key,)).fetchone()
+            row=conn.execute('SELECT t.id,t.session_id,t.department_id,t.token_no,t.status,t.priority_class,t.check_in_at,t.service_start_at,t.initial_wait_minutes,t.initial_prediction_version,d.name AS department,d.code FROM queue_tokens t JOIN departments d ON d.id=t.department_id WHERE public_key=%s',(key,)).fetchone()
             if not row:raise HTTPException(404,'Token not found.')
-            ahead=conn.execute("SELECT count(*) AS count FROM queue_tokens WHERE department_id=%s AND status='waiting' AND check_in_at<%s",(row['department_id'],row['check_in_at'])).fetchone()['count']
-            count=active_staff(conn,row['department_id'])
-            return dict(token=f"{row['code']}-{row['token_no']:03}",department=row['department'],status=row['status'],position=ahead+1 if row['status']=='waiting' else None,estimated_wait=round(ahead*service_estimate(conn,row['department_id'])/count,1) if count and row['status']=='waiting' else None,notice='Approximate operational estimate. This link contains no personal medical information.')
+            from backend.services.prediction import live_predictions
+            prediction=live_predictions(conn,row['department_id']).get(str(row['id']),{}) if row['status']=='waiting' else {}
+            actual=round((row['service_start_at']-row['check_in_at']).total_seconds()/60,1) if row['service_start_at'] else None
+            return dict(token=f"{row['code']}-{row['token_no']:03}",department=row['department'],status=row['status'],priority_class=row['priority_class'],position=prediction.get('position'),patients_ahead=prediction.get('patients_ahead'),estimated_wait=prediction.get('minutes'),prediction_source=prediction.get('source'),initial_prediction=row['initial_wait_minutes'],actual_wait=actual,prediction_error=round(actual-row['initial_wait_minutes'],1) if actual is not None and row['initial_wait_minutes'] is not None else None,notice=prediction.get('reason','Your private token shows recorded queue progress.'))
 
     @app.get('/analytics/summary')
     def summary(start:date,end:date,department:uuid.UUID|None=None,staff:uuid.UUID|None=None,weekday:int|None=Query(None,ge=1,le=7),hour_from:int=Query(0,ge=0,le=23),hour_to:int=Query(23,ge=0,le=23),user=Depends(current_user)):
@@ -265,20 +311,24 @@ def attach_product(app,settings,current_user):
         require(user,MANAGERS);return simulate(body)
 
     @app.get('/models/performance')
-    def performance(user=Depends(current_user)):
+    def performance(start:date|None=None,end:date|None=None,department:uuid.UUID|None=None,user=Depends(current_user)):
         require(user,MANAGERS)
         path=ROOT/'ml/evaluation/results.json'
         if not path.exists():raise HTTPException(503,'Train the model before viewing evaluation results.')
         result=json.loads(path.read_text())
         with connection(settings) as conn:
-            result['monitoring']=conn.execute("SELECT d.name AS department,count(*) AS count,avg(abs(extract(epoch FROM(t.service_start_at-t.check_in_at))/60-p.predicted_wait_minutes)) AS mae FROM predictions p JOIN queue_tokens t ON t.id=p.token_id JOIN departments d ON d.id=t.department_id WHERE t.service_start_at IS NOT NULL GROUP BY d.name").fetchall()
+            from backend.services.monitoring import monitoring
+            window_end=end or datetime.now(TZ).date()
+            window_start=start or window_end-timedelta(days=89)
+            result['live_monitoring']=monitoring(conn,window_start,window_end,department)
+            result['monitoring']=result['live_monitoring']['departments']
         return result
 
     @app.post('/predict/wait-time')
     def predict(body:CheckIn,user=Depends(current_user)):
         with connection(settings) as conn:
             from backend.services.prediction import current_prediction
-            return current_prediction(conn,body.department_id)
+            return current_prediction(conn,body.department_id,requirements=body.model_dump())
 
     @app.get('/alerts')
     def alerts(user=Depends(current_user)):
@@ -378,9 +428,16 @@ def attach_product(app,settings,current_user):
         return {'ok':True}
 
     @app.get('/audit')
-    def audit_log(search:str=Query('',max_length=100),user=Depends(current_user)):
+    def audit_log(search:str=Query('',max_length=100),start:date|None=None,end:date|None=None,entity_id:uuid.UUID|None=None,offset:int=Query(0,ge=0,le=1000000),user=Depends(current_user)):
         require(user,('admin',))
-        with connection(settings) as conn:return conn.execute('SELECT a.*,u.email FROM audit_logs a LEFT JOIN users u ON u.id=a.user_id WHERE a.action ILIKE %s OR coalesce(u.email,\'\') ILIKE %s ORDER BY a.created_at DESC LIMIT 200',('%'+search+'%','%'+search+'%')).fetchall()
+        if start and end:filters(start,end)
+        with connection(settings) as conn:
+            return conn.execute("""SELECT a.*,u.email FROM audit_logs a LEFT JOIN users u ON u.id=a.user_id
+            WHERE (a.action ILIKE %s OR coalesce(u.email,'') ILIKE %s OR a.entity_type ILIKE %s)
+            AND (%s::date IS NULL OR (a.created_at AT TIME ZONE 'Asia/Colombo')::date>=%s)
+            AND (%s::date IS NULL OR (a.created_at AT TIME ZONE 'Asia/Colombo')::date<=%s)
+            AND (%s::uuid IS NULL OR a.entity_id=%s)
+            ORDER BY a.created_at DESC,a.id DESC LIMIT 200 OFFSET %s""",('%'+search+'%',)*3+(start,start,end,end,entity_id,entity_id,offset)).fetchall()
 
     @app.post('/data/import')
     def import_data(body:ImportInput,user=Depends(current_user)):
@@ -392,26 +449,14 @@ def attach_product(app,settings,current_user):
             return result
 
     @app.get('/reports/export')
-    def export(start:date,end:date,format:Literal['csv','pdf']='csv',department:uuid.UUID|None=None,staff:uuid.UUID|None=None,weekday:int|None=Query(None,ge=1,le=7),hour_from:int=Query(0,ge=0,le=23),hour_to:int=Query(23,ge=0,le=23),user=Depends(current_user)):
+    def export(start:date,end:date,format:Literal['csv','pdf']='csv',report_type:Literal['visits','operational','daily','monthly','doctor','department','waiting','peak_hour']='visits',department:uuid.UUID|None=None,staff:uuid.UUID|None=None,weekday:int|None=Query(None,ge=1,le=7),hour_from:int=Query(0,ge=0,le=23),hour_to:int=Query(23,ge=0,le=23),user=Depends(current_user)):
         require(user,MANAGERS)
+        from backend.services.reports import sections,render
         with connection(settings) as conn:
-            where,args=filters(start,end,department,staff,weekday,hour_from,hour_to)
-            if format=='csv':
-                rows=conn.execute('SELECT d.code,t.token_no,t.status,t.check_in_at,t.called_at,t.service_start_at,t.completed_at'+BASE+where+' ORDER BY t.check_in_at LIMIT 50001',args).fetchall()
-                if len(rows)>50000:raise HTTPException(422,'Export exceeds 50,000 rows. Narrow the date range.')
-                buffer=io.StringIO();writer=csv.writer(buffer);writer.writerow(['department','token','status','check_in_at','called_at','service_start_at','completed_at'])
-                for row in rows:writer.writerow(list(row.values()))
-                content=buffer.getvalue();media='text/csv'
-            else:
-                from reportlab.pdfgen.canvas import Canvas
-                report=analytics(conn,start,end,department,staff,weekday,hour_from,hour_to)
-                buffer=io.BytesIO();canvas=Canvas(buffer);canvas.setTitle('QueueSense operational report')
-                canvas.setFont('Helvetica-Bold',20);canvas.drawString(45,790,'QueueSense | Operational report');canvas.setFont('Helvetica',10)
-                lines=[f'Synthetic portfolio data | {start} to {end}',f'Filters: department={department or "all"}; staff={staff or "all"}',f'Weekday={weekday or "all"}; hours={hour_from}:00-{hour_to}:59','Arrival-date cohort; waiting = service start minus check-in.','']+[f'{key.replace("_"," ").title()}: {round(float(value),2) if value is not None else "N/A"}' for key,value in report['summary'].items()]+['','Department comparisons:']+[f'{row["name"]}: {row["completed"]} completed; average wait {round(float(row["average_wait"] or 0),1)} minutes' for row in report['departments']]
-                y=760
-                for line in lines:
-                    if y<50:canvas.showPage();canvas.setFont('Helvetica',10);y=790
-                    canvas.drawString(45,y,line[:120]);y-=20
-                canvas.save();content=buffer.getvalue();media='application/pdf'
-            audit(conn,user,'export_'+format,'report',uuid.UUID(int=0))
-        return Response(content,media_type=media,headers={'Content-Disposition':f'attachment; filename="queuesense-{start}-{end}.{format}"'})
+            tables=sections(conn,start,end,report_type,department,staff,weekday,hour_from,hour_to)
+            if format=='pdf' and report_type=='visits' and len(tables[0]['rows'])>5000:
+                raise HTTPException(422,'Detailed PDF exceeds 5,000 visits. Narrow the selection or use CSV.')
+            cohort=f'Department={department or "all"}; doctor={staff or "all"}; weekday={weekday or "all"}; hours={hour_from}:00-{hour_to}:59'
+            content,media=render(tables,format,start,end,report_type,cohort)
+            audit(conn,user,'export_'+format,'report',uuid.UUID(int=0),{'report_type':report_type,'start':str(start),'end':str(end),'department_id':str(department) if department else None,'staff_id':str(staff) if staff else None,'weekday':weekday,'hour_from':hour_from,'hour_to':hour_to})
+        return Response(content,media_type=media,headers={'Content-Disposition':f'attachment; filename="queuesense-{report_type}-{start}-{end}.{format}"'})

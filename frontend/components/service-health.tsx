@@ -1,0 +1,9 @@
+'use client';
+import {useCallback,useEffect,useState} from 'react';
+type Health={status:string;checked_at:string;notice:string;services:{service:string;status:string;detail:string;latency_ms?:number}[]};
+export function ServiceHealth(){
+ const [data,setData]=useState<Health|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const load=useCallback(async(signal?:AbortSignal)=>{setBusy(true);try{const r=await fetch('/api/service/health/services',{cache:'no-store',signal});const row=await r.json();if(!r.ok)throw new Error(typeof row.detail==='string'?row.detail:'Health checks unavailable.');setData(row);setError('');}catch(e){if(!signal?.aborted)setError((e as Error).message);}finally{if(!signal?.aborted)setBusy(false);}},[]);
+ useEffect(()=>{const controller=new AbortController();void load(controller.signal);const timer=setInterval(()=>{if(document.visibilityState==='visible')void load(controller.signal);},30000);return()=>{controller.abort();clearInterval(timer);};},[load]);
+ return <section className="panel padded"><div className="panel-heading"><h2>Service health</h2><button className="outline" disabled={busy} onClick={()=>void load()}>{busy?'Checking…':'Check now'}</button></div>{error&&<p className="product-error" role="alert">{error} Previous results may be stale.</p>}{data&&<><p role="status">{data.status==='healthy'?'All monitored services are healthy':'Some services need attention'} · Checked {new Date(data.checked_at).toLocaleTimeString()}</p><div className="health-grid">{data.services.map(s=><article className="panel padded" key={s.service}><h3>{s.service}</h3><strong>{s.status}</strong><p>{s.detail}</p>{s.latency_ms!=null&&<small>{s.latency_ms} ms</small>}</article>)}</div><p className="footnote">{data.notice} Checks refresh every 30 seconds while this page is visible.</p></>}</section>;
+}

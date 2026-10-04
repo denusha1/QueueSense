@@ -84,6 +84,8 @@ def attach_arrivals(app, settings, current_user, issue_token):
             count=conn.execute("SELECT count(*) AS n FROM appointments WHERE slot_id=%s AND status!='cancelled'",(body.slot_id,)).fetchone()['n']
             if count>=slot['capacity']: raise HTTPException(409,'This slot is full. Choose another time.')
             row=conn.execute('INSERT INTO appointments(slot_id,reference,public_key,created_by) VALUES(%s,%s,%s,%s) RETURNING *',(body.slot_id,'APT-'+secrets.token_hex(5).upper(),secrets.token_urlsafe(32),user['id'])).fetchone()
+            from backend.automation import send
+            send(conn,slot['department_id'],'appointment','booking_confirmation','Your arrival slot is booked for '+slot['starts_at'].astimezone(TZ).strftime('%d %b %Y, %H:%M')+' Colombo time. Confirm attendance through this private page.', 'booked:'+str(row['id']),appointment=row['id'])
             audit(conn,user,'book_appointment','appointment',row['id'])
             return row
 
@@ -94,6 +96,9 @@ def attach_arrivals(app, settings, current_user, issue_token):
             row=conn.execute("UPDATE appointments SET status='cancelled' WHERE id=%s AND status='booked' RETURNING *",(appointment_id,)).fetchone()
             if not row: raise HTTPException(409,'Only booked appointments can be cancelled.')
             audit(conn,user,'cancel_appointment','appointment',row['id'])
+            from backend.automation import send
+            dep=conn.execute('SELECT department_id FROM appointment_slots WHERE id=%s',(row['slot_id'],)).fetchone()['department_id']
+            send(conn,dep,'appointment','booking_cancelled','Reception cancelled this appointment. Please contact the clinic to arrange another visit.','cancelled:'+str(row['id']),appointment=row['id'])
             return row
 
     @app.get('/checkin/kiosks')
@@ -126,7 +131,7 @@ def attach_arrivals(app, settings, current_user, issue_token):
 
     def resolve(conn, key, lock=False):
         if not 30<=len(key)<=80: raise HTTPException(404,'Check-in link not found.')
-        row=conn.execute("""SELECT a.id,a.reference,a.status,a.token_id,s.starts_at,s.department_id,d.name AS department,d.is_active
+        row=conn.execute("""SELECT a.id,a.reference,a.status,a.token_id,a.attendance_outcome,s.starts_at,s.department_id,d.name AS department,d.is_active
         FROM appointments a JOIN appointment_slots s ON s.id=a.slot_id JOIN departments d ON d.id=s.department_id
         WHERE a.public_key=%s"""+(' FOR UPDATE OF a' if lock else ''),(key,)).fetchone()
         if row: return 'appointment',row
@@ -139,7 +144,7 @@ def attach_arrivals(app, settings, current_user, issue_token):
     def info(key: str):
         with connection(settings) as conn:
             kind,row=resolve(conn,key)
-            return dict(kind=kind,department=row['department'],reference=row.get('reference'),starts_at=row.get('starts_at'),status=row.get('status','open'),active=row['is_active'])
+            return dict(kind=kind,department=row['department'],reference=row.get('reference'),starts_at=row.get('starts_at'),status=row.get('status','open'),active=row['is_active'] and not row.get('attendance_outcome'))
 
     @app.get('/self-checkin/{key}/qr')
     def qr(key: str, origin: str):

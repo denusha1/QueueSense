@@ -6,3 +6,6 @@ GRANT SELECT,INSERT ON service_events,predictions,audit_logs TO queuesense_auth;
 GRANT SELECT ON token_durations,daily_department_summary,model_runs TO queuesense_auth;
 GRANT SELECT,INSERT,UPDATE ON appointment_slots,appointments,checkin_kiosks TO queuesense_auth;
 GRANT SELECT,INSERT ON self_checkins TO queuesense_auth;
+GRANT SELECT,INSERT ON patient_feedback TO queuesense_auth;
+GRANT SELECT,INSERT,UPDATE ON notifications,automation_state TO queuesense_auth;
+GRANT SELECT,INSERT ON notification_reads TO queuesense_auth;

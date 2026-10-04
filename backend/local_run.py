@@ -18,7 +18,7 @@ def main():
     os.environ.setdefault('ENABLE_DEMO_LOGIN', 'true')
     os.environ.setdefault('FRONTEND_ORIGINS', 'http://127.0.0.1:3001,http://localhost:3001')
     import uvicorn
-    uvicorn.run('backend.app:create_app', factory=True, host='127.0.0.1', port=8001, proxy_headers=False)
+    uvicorn.run('backend.app:create_app', factory=True, host='127.0.0.1', port=8001, proxy_headers=False, access_log=False)
 
 
 if __name__ == '__main__':

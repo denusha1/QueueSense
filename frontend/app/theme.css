@@ -87,3 +87,44 @@ body, .shell, .dataset-page { background: var(--canvas); color: var(--ink); }
   .role-card:hover { border-color: #a1b677; }
   .product-sidebar nav button:not(.active):hover { background: #ffffff0c; color: #fff; }
 }
+
+/* A distinct patient entrance alongside staff sign-in. */
+.patient-tracking-entry{display:grid;grid-template-columns:44px minmax(0,1fr) 32px;align-items:start;gap:14px;margin:22px 0 24px;padding:20px;border:1px solid #cddbe7;border-radius:16px;background:linear-gradient(120deg,#eef4fa,#f8fbfc);text-decoration:none;color:var(--navy);box-shadow:0 3px 12px #17294706;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}
+.patient-tracking-entry:hover{border-color:#8ba6c0;background:linear-gradient(120deg,#e8f0f9,#f3f8fc);box-shadow:0 6px 20px #1729470d}
+.patient-tracking-entry:focus-visible{outline:3px solid var(--navy);outline-offset:4px}
+.patient-tracking-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:var(--navy);color:#fff;box-shadow:0 4px 10px #17294714}
+.patient-tracking-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.patient-tracking-label{font-size:9px;letter-spacing:1.5px;font-weight:700;color:#607a95}
+.patient-tracking-copy strong{font-size:17px;line-height:1.35;letter-spacing:-.3px}
+.patient-tracking-description{font-size:11px;line-height:1.7;color:#63758a}
+.patient-tracking-action{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:12px;font-weight:700}
+.patient-tracking-arrow{display:grid;place-items:center;width:32px;height:32px;border:1px solid #d5e0ea;border-radius:50%;background:#ffffffb3;color:var(--navy)}
+@media(max-width:480px){.patient-tracking-entry{padding:17px;gap:11px;grid-template-columns:40px minmax(0,1fr) 28px}.patient-tracking-icon{width:40px;height:40px}.patient-tracking-arrow{width:28px;height:28px}.patient-tracking-copy strong{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.patient-tracking-entry{transition:none}}
+
+.planning-stack{display:flex;flex-direction:column;gap:22px}.planning-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0}.planning-fields fieldset{border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.planning-fields legend{font-size:12px;font-weight:600}.planning-checkbox{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.6;margin:12px 0 20px}.planning-checkbox input{flex-shrink:0;margin-top:3px;accent-color:var(--navy)}.planning-options{display:grid;gap:12px;margin:20px 0}.planning-options .panel h3{margin-top:0}.planning-stack details{margin-top:20px}.planning-stack summary{cursor:pointer;font-size:13px;font-weight:600;margin-bottom:14px}@media(max-width:800px){.planning-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.planning-fields{grid-template-columns:1fr}.planning-stack .button-row{flex-wrap:wrap}}
+
+.notification-inbox { margin: 22px 0; text-align: left; }
+.notification-inbox summary { display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:650; }
+.notification-inbox h2 { display:flex; align-items:center; gap:8px; }
+.notification-controls,.confirmation-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:18px 0; }
+.notification-list { max-height:460px; overflow:auto; }
+.notification-item { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:16px 12px; border-bottom:1px solid #e2e8df; }
+.notification-item.unread { background:#f0f5ed; border-left:3px solid #527046; }
+.notification-item p { margin:7px 0; line-height:1.6; }
+.notification-item time { color:#667461; font-size:12px; }
+.notification-item button { flex-shrink:0; }
+.congestion-department { padding:20px 0; border-top:1px solid #e2e8df; }
+.risk-chip { display:inline-block; padding:5px 10px; border-radius:20px; background:#edf3e9; color:#3b5935; font-size:12px; font-weight:650; text-transform:capitalize; white-space:nowrap; }
+.risk-chip.warning,.risk-chip.medium { background:#fff1d8; color:#855a12; }
+.risk-chip.critical,.risk-chip.high { background:#fce8e4; color:#a13e31; }
+.risk-chip.closed { background:#eee; color:#666; }
+@media(max-width:640px){.notification-controls,.confirmation-row{align-items:stretch;flex-direction:column;}.notification-item{padding:12px 8px;gap:8px;}.notification-item button{padding:8px;}.congestion-panel .panel-heading{flex-wrap:wrap;}.notification-inbox summary{flex-wrap:wrap;}}
+
+.tracking-qr { padding:18px; margin:18px 0; border:1px solid #dce5d5; border-radius:16px; background:#f8faf5; }
+.tracking-qr h3 { display:flex; align-items:center; justify-content:center; gap:8px; }
+.tracking-qr img { display:block; margin:12px auto; background:white; border-radius:8px; }
+.wait-comparison { display:block; margin:10px 0; font-size:13px; line-height:1.7; color:#526449; }
+.patient-card .wait-comparison { border:1px solid #dce5d5; border-radius:14px; padding:12px; background:#f8faf5; }
+.patient-card .patient-token-id { font-size:clamp(28px,7.5vw,56px); line-height:1.15; letter-spacing:-1px; overflow-wrap:anywhere; }
+.token-receipt>strong { overflow-wrap:anywhere; }

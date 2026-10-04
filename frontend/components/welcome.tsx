@@ -75,6 +75,11 @@ export function Welcome() {
       <div className="login-content">
         <span className="welcome-icon"><Layers3 size={25} /></span>
         <div className="welcome-copy"><p className="section-label">YOUR WORKDAY, CONNECTED</p><h2>Welcome to QueueSense</h2><p>Better patient flow starts with you.</p></div>
+        <Link className="patient-tracking-entry" href="/patient" aria-label="Open patient tracking">
+          <span className="patient-tracking-icon" aria-hidden="true"><Clock3 size={23}/></span>
+          <span className="patient-tracking-copy"><span className="patient-tracking-label">PATIENT ACCESS</span><strong>Patient tracking</strong><span className="patient-tracking-description">View your token, queue position and estimated wait.</span><span className="patient-tracking-action">Open tracker <ArrowRight size={15} aria-hidden="true"/></span></span>
+          <span className="patient-tracking-arrow" aria-hidden="true"><ArrowUpRight size={19}/></span>
+        </Link>
         <fieldset className="role-fieldset" disabled={busy}><legend>Choose your workspace</legend><div className="roles">{roles.map(({name, description, icon: Icon}) => <label key={name} className={`role-card ${role === name ? "selected" : ""}`}><input type="radio" name="role" value={name} checked={role === name} onChange={() => {setRole(name);setMessage("");}} /><Icon size={20} /><span className="role-name">{name}</span><span className="role-description">{description}</span><span className="radio-mark">{role === name && <Check size={9} strokeWidth={3} />}</span></label>)}</div></fieldset>
         <form onSubmit={event => {event.preventDefault(); const fields = new FormData(event.currentTarget); void signIn(false, String(fields.get("email")), String(fields.get("password")));}}>
           <label className="field-label" htmlFor="email">Work email</label><div className="input-wrap"><Mail size={18} /><input id="email" name="email" type="email" placeholder="you@clinic.com" autoComplete="username" maxLength={254} disabled={busy} required /></div>

@@ -22,7 +22,7 @@ def main():
     with psycopg.connect(owner_url) as conn:
         conn.execute((ROOT / 'database/tests/integrity.sql').read_text())
         conn.rollback()
-    for statement in ['DELETE FROM users WHERE false', 'CREATE TABLE public.forbidden_probe(id integer)']:
+    for statement in ['DELETE FROM users WHERE false', 'DELETE FROM audit_logs WHERE false', 'UPDATE audit_logs SET action=action WHERE false', 'CREATE TABLE public.forbidden_probe(id integer)']:
         with psycopg.connect(runtime_url) as conn:
             try:
                 conn.execute(statement)
@@ -31,7 +31,7 @@ def main():
             else:
                 conn.rollback()
                 raise AssertionError('Runtime role unexpectedly permitted: ' + statement)
-    subprocess.run([python, '-m', 'pytest', 'backend/tests', '-q'], cwd=ROOT, env=env, check=True)
+    subprocess.run([python, '-m', 'pytest', 'backend/tests', '-q', '--tb=short'], cwd=ROOT, env=env, check=True)
     print('PASS: native migrations/re-run, full seed, integrity cases, restricted runtime permissions, authentication tests.')
 
 
