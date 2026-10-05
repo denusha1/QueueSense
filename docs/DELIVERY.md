@@ -43,6 +43,8 @@ The import format deliberately accepts non-identifying historical operational fi
 
 Staff provisioning accepts an initial password. Self-service password reset, reset emails and MFA are not implemented. Exact production origin/TLS settings and operational backups must be supplied at deployment.
 
+Security controls and their operational gaps are summarized in [the security review](SECURITY_REVIEW.md); use the [backup/restore runbook](BACKUP_RESTORE.md) to plan a restore rehearsal. Walkthrough, screenshots and reproducible local demo instructions are in [portfolio materials](PORTFOLIO.md). The [usability review plan](USABILITY_REVIEW.md) is ready for staff/student sessions, but participant feedback has not yet been collected.
+
 ## Verification evidence
 
 20 native PostgreSQL API/model tests pass, including role/session controls, concurrent queue numbering, staff occupancy, lifecycle-to-analytics, imports/exports, simulator and prior-only model feature checks. Seven synthetic-generator tests previously passed. Production frontend build with TypeScript passed. Chromium exercised all 15 workspace views, actual check-in/call/start/complete controls, private patient status, CSV validation, CSV/PDF downloads and mobile widths. Browser test source is `frontend/tests/e2e.cjs`; screenshots and a two-minute walkthrough are stored locally under `docs/`.

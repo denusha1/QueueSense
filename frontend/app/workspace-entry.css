@@ -1,0 +1,98 @@
+/* The workspace chooser is an entry point into each team's daily work. */
+.entry .role-fieldset { margin-bottom:var(--space-4); }
+.entry .role-fieldset legend { font-family:var(--font-heading); font-size:19px; font-weight:750; letter-spacing:-.5px; color:var(--navy); margin-bottom:var(--space-1); }
+.entry .workspace-choice-hint { margin:0 0 var(--space-4); color:var(--muted); font-size:13px; }
+.entry .roles { grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-3); }
+.entry .role-card { padding:var(--space-4); min-height:168px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow-panel); transition:background .25s,transform .25s,border-color .25s,box-shadow .25s; }
+.entry .role-card-top { display:flex; align-items:center; justify-content:space-between; width:100%; }
+.entry .role-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:var(--radius-md); background:var(--surface-soft); border:1px solid var(--line); }
+.entry .role-icon svg { color:var(--navy); }
+.entry .role-card .radio-mark { position:static; display:grid; place-items:center; width:25px; height:25px; border:0; background:transparent; color:var(--muted); box-shadow:none; }
+.entry .role-index { font-size:11px; font-weight:650; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+.entry .role-card .role-name { font-family:var(--font-heading); font-size:17px; font-weight:750; margin-top:var(--space-3); line-height:1.3; color:var(--navy); letter-spacing:-.3px; }
+.entry .role-card .role-description { font-size:12px; margin-top:3px; color:var(--muted); white-space:normal; }
+.entry .role-tools { display:flex; flex-wrap:wrap; gap:5px; margin-top:var(--space-3); padding-right:12px; }
+.entry .role-tools>span { font-size:10px; line-height:1.5; background:var(--surface-soft); color:var(--muted); border-radius:var(--radius-xs); padding:3px 6px; }
+.entry .role-card-arrow { position:absolute; right:14px; bottom:16px; color:var(--muted); opacity:0; transform:translate(-3px,3px); transition:opacity .2s,transform .2s; }
+.entry .role-card.selected { background:linear-gradient(140deg,var(--navy),var(--navy-light)); border-color:var(--navy); box-shadow:0 8px 24px #101f3d25; }
+.entry .role-card.selected .role-name { color:var(--surface); }
+.entry .role-card.selected .role-description { color:var(--text-on-dark); }
+.entry .role-card.selected .role-icon { background:var(--lime); border-color:var(--lime); }
+.entry .role-card.selected .role-icon svg { color:var(--navy); }
+.entry .role-card.selected .radio-mark { background:var(--lime); border-radius:var(--radius-pill); color:var(--navy); }
+.entry .role-card.selected .role-tools>span { background:#ffffff12; color:var(--text-on-dark); }
+.entry .role-card.selected .role-card-arrow { opacity:1; transform:translate(0); color:var(--lime); }
+.entry .workspace-selection { display:flex; gap:var(--space-3); align-items:flex-start; padding:var(--space-4); margin-bottom:var(--space-6); border:1px solid var(--border-brand); border-radius:var(--radius-md); background:linear-gradient(110deg,var(--lime-soft),var(--surface)); }
+.entry .workspace-selection-icon { display:grid; place-items:center; flex-shrink:0; width:36px; height:36px; border:1px solid var(--border-brand); background:var(--surface); border-radius:var(--radius-sm); color:var(--navy); }
+.entry .workspace-selection-label { display:block; font-size:10px; letter-spacing:1px; color:var(--accent); font-weight:650; }
+.entry .workspace-selection strong { display:block; font-size:14px; color:var(--navy); margin-top:2px; }
+.entry .workspace-selection p { font-size:12px; color:var(--muted); line-height:1.6; margin:5px 0 0; }
+/* A dark welcome header anchors the light, readable credential form. */
+.entry .workspace-signin-form { padding:0; overflow:hidden; border:1px solid #cbd5e4; border-radius:var(--radius-xl); background:var(--surface); box-shadow:0 4px 8px #101f3d05,0 16px 40px #101f3d0d; }
+.entry .signin-form-heading { position:relative; isolation:isolate; overflow:hidden; display:block; padding:var(--space-6); margin:0; border:0; background:linear-gradient(125deg,var(--navy),var(--navy-light)); }
+.entry .signin-form-heading::after { content:''; position:absolute; right:-36px; top:-70px; width:210px; height:210px; border:1px solid #ffffff10; border-radius:50%; box-shadow:0 0 0 26px #ffffff03,0 0 0 52px #ffffff03; z-index:-1; }
+.entry .signin-heading-top { display:flex; justify-content:space-between; align-items:center; gap:var(--space-3); margin-bottom:var(--space-4); }
+.entry .signin-shield { display:grid; place-items:center; width:46px; height:46px; background:#c5f35b12; border:1px solid #c5f35b40; border-radius:var(--radius-md); color:var(--lime); }
+.entry .signin-role-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid #ffffff24; border-radius:var(--radius-pill); background:#ffffff08; color:var(--text-on-dark); font-size:12px; }
+.entry .signin-form-heading .signin-eyebrow { color:var(--lime); font-size:10px; font-weight:650; letter-spacing:1.6px; margin:0 0 6px; }
+.entry .signin-form-heading h3 { font-family:var(--font-heading); font-size:24px; font-weight:750; line-height:1.3; letter-spacing:-.7px; margin:0; color:var(--surface); }
+.entry .signin-form-heading .signin-heading-description { font-size:13px; color:var(--text-on-dark); margin:6px 0 0; }
+.entry .signin-flow { position:absolute; right:0; bottom:18px; width:160px; height:40px; opacity:.22; pointer-events:none; z-index:-1; }
+.entry .signin-form-body { padding:var(--space-6); }
+.entry .workspace-signin-form .field-label { font-size:13px; font-weight:650; color:var(--ink); margin-bottom:var(--space-2); }
+.entry .workspace-signin-form .password-label { margin-top:var(--space-5); margin-bottom:var(--space-2); gap:var(--space-2); }
+.entry .workspace-signin-form .password-label .field-label { margin:0; }
+.entry .workspace-signin-form .password-label .text-button { font-size:12px; color:var(--muted); }
+.entry .workspace-signin-form .input-wrap { background:var(--canvas); border-color:var(--line); min-height:56px; height:auto; padding:6px var(--space-2); gap:var(--space-3); border-radius:var(--radius-md); transition:border-color .2s,background .2s,box-shadow .2s; }
+.entry .signin-input-icon { width:36px; height:36px; display:grid; place-items:center; flex-shrink:0; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); color:var(--muted); transition:color .2s,border-color .2s; }
+.entry .workspace-signin-form .input-wrap:focus-within { background:var(--surface); border-color:var(--navy-light); box-shadow:0 0 0 3px #101f3d0c; }
+.entry .input-wrap:focus-within .signin-input-icon { background:var(--lime-soft); border-color:var(--border-brand); color:var(--navy); }
+.entry .workspace-signin-form .input-wrap input { font-size:16px; color:var(--ink); min-height:42px; padding:0; }
+.entry .workspace-signin-form .input-wrap input::placeholder { color:#64748b; }
+.entry .workspace-signin-form .visibility-button { min-height:40px; min-width:40px; padding:0; border-radius:var(--radius-sm); color:var(--muted); }
+.entry .workspace-signin-form .visibility-button[aria-pressed="true"] { background:var(--lime-soft); color:var(--navy); }
+.entry .workspace-signin-form .auth-note { font-size:12px; color:var(--muted); line-height:1.6; align-items:flex-start; gap:var(--space-2); padding:var(--space-3) 0; margin:var(--space-2) 0; }
+.entry .workspace-signin-form .auth-note svg { flex-shrink:0; margin-top:3px; color:var(--accent); }
+.entry .workspace-signin-form .auth-note strong { display:block; color:var(--ink); font-weight:650; }
+.entry .workspace-signin-form .primary-button { justify-content:space-between; gap:var(--space-3); min-height:56px; border-radius:var(--radius-md); padding:var(--space-2) var(--space-3) var(--space-2) var(--space-4); font-size:14px; font-weight:700; }
+.entry .signin-button-arrow { display:grid; place-items:center; width:34px; height:34px; border:1px solid #101f3d12; border-radius:var(--radius-sm); background:#ffffff50; flex-shrink:0; }
+.entry .signin-button-arrow svg { transition:transform .2s; }
+.entry .workspace-signin-form .form-message { color:var(--waiting-ink); background:var(--waiting-bg); border-color:var(--waiting-line); font-size:13px; }
+.entry .workspace-demo-panel { padding:var(--space-5); margin-top:var(--space-4); border:1px dashed #bac6d8; border-radius:var(--radius-xl); background:linear-gradient(130deg,var(--surface-soft),var(--surface)); }
+.entry .demo-panel-heading { display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-4); }
+.entry .demo-panel-icon { width:38px; height:38px; display:grid; place-items:center; background:var(--surface); color:var(--navy); border:1px solid var(--line); border-radius:var(--radius-md); }
+.entry .demo-panel-heading strong { display:block; color:var(--navy); font-family:var(--font-heading); font-size:16px; letter-spacing:-.3px; }
+.entry .demo-panel-heading div>span { font-size:12px; color:var(--muted); }
+.entry .workspace-demo-panel .demo-button { margin:0; min-height:48px; background:var(--surface); border-color:#bdcada; font-size:13px; }
+.entry .workspace-demo-panel .demo-note { font-size:12px; margin:var(--space-3) 0; color:var(--muted); }
+.entry .workspace-demo-panel .dataset-entry-link { font-size:12px; margin:0; }
+.entry .privacy { margin-top:var(--space-5); background:transparent; border:0; padding:0; align-items:flex-start; }
+.entry .privacy>svg { flex-shrink:0; color:var(--muted); margin-top:4px; }
+.entry .privacy p { font-size:12px; color:var(--muted); }
+.entry .privacy strong { color:var(--ink); font-weight:600; }
+@media(hover:hover) {
+ .entry .role-card:hover { transform:translateY(-3px); border-color:#8e9db4; box-shadow:var(--shadow-hover); }
+ .entry .role-card:hover .role-card-arrow { opacity:1; transform:translate(0); }
+ .entry .role-card.selected:hover { border-color:var(--navy); box-shadow:0 12px 28px #101f3d30; }
+ .entry .workspace-signin-form .primary-button:hover:not(:disabled) .signin-button-arrow svg { transform:translateX(3px); }
+ .entry .workspace-signin-form .visibility-button:hover { background:var(--lime-soft); color:var(--navy); }
+ .entry .workspace-demo-panel .demo-button:hover:not(:disabled) { background:var(--lime-soft); border-color:#a1b677; }
+}
+@media(max-width:480px) {
+ .entry .role-card { padding:var(--space-3); min-height:166px; }
+ .entry .roles { gap:var(--space-2); }
+ .entry .role-tools { padding-right:0; gap:4px; }
+ .entry .role-tools>span { font-size:10px; padding:3px 5px; }
+ .entry .role-card-arrow { display:none; }
+ .entry .workspace-demo-panel { padding:var(--space-4); }
+ .entry .signin-form-heading,.entry .signin-form-body { padding:var(--space-5); }
+ .entry .workspace-selection { padding:var(--space-3); }
+
+}
+@media(prefers-reduced-motion:reduce) {
+ .entry .role-card,.entry .role-card-arrow { transition:none; }
+ .entry .role-card:hover { transform:none; }
+}
+/* Let the entry column shrink to the viewport rather than its fields' intrinsic width. */
+.shell>.entry { min-width:0; }
+.entry .workspace-signin-form,.entry .signin-form-body { min-width:0; }

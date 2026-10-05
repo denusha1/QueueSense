@@ -9,3 +9,5 @@ GRANT SELECT,INSERT ON self_checkins TO queuesense_auth;
 GRANT SELECT,INSERT ON patient_feedback TO queuesense_auth;
 GRANT SELECT,INSERT,UPDATE ON notifications,automation_state TO queuesense_auth;
 GRANT SELECT,INSERT ON notification_reads TO queuesense_auth;
+GRANT UPDATE(display_name,preferred_language) ON users TO queuesense_auth;
+GRANT SELECT,INSERT,UPDATE,DELETE ON account_mfa,account_recovery,security_attempts,notification_targets,notification_deliveries TO queuesense_auth;

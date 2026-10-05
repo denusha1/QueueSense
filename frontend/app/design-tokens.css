@@ -1,0 +1,24 @@
+/* Authoritative QueueSense tokens. Layout sheets consume these values. */
+:root {
+ --navy:#101f3d; --navy-light:#243c65; --lime:#c5f35b; --lime-hover:#d6ff7b; --lime-soft:#f0f8dd;
+ --ink:#172947; --muted:#52647d; --line:#dde3ed; --surface:#fff; --surface-soft:#edf1f7; --canvas:#f3f5f9; --accent:#49651d;
+ --text-on-dark:#d3ddec; --border-brand:#d9e6bc;
+ --font-body:'DM Sans',sans-serif; --font-heading:Manrope,sans-serif;
+ --text-body:14px; --text-input:16px; --text-label:13px; --text-small:12px; --text-micro:11px;
+ --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px; --space-10:40px; --space-12:48px;
+ --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-xl:20px; --radius-2xl:24px; --radius-pill:999px;
+ --shadow-panel:0 2px 4px #101f3d04,0 12px 32px #101f3d08;
+ --shadow-action:0 4px 12px #101f3d12; --shadow-hover:0 8px 20px #101f3d16;
+ --premium-shadow:var(--shadow-panel); --premium-ease:cubic-bezier(.22,1,.36,1);
+ --button-ink:var(--navy); --button-border:var(--line); --button-focus:#718f29; --button-radius:var(--radius-md);
+ --waiting-ink:#805611; --waiting-bg:#fff3da; --waiting-line:#e8c987;
+ --called-ink:#245d9a; --called-bg:#eaf3ff; --called-line:#b9d2f3;
+ --service-ink:#14675f; --service-bg:#e7f5f2; --service-line:#a8d8d0;
+ --completed-ink:#286b42; --completed-bg:#eaf6ed; --completed-line:#b5d8bf;
+ --missed-ink:#994a45; --missed-bg:#fbeeed; --missed-line:#e9c2bd;
+ --neutral-ink:#52647d; --neutral-bg:#edf1f7; --neutral-line:#ccd5e1;
+ --chart-actual:var(--navy); --chart-predicted:var(--lime); --chart-predicted-outline:#49651d;
+ --chart-arrivals:var(--navy); --chart-completed:#14675f; --chart-wait:#245d9a;
+ --chart-mae:#805611; --chart-rmse:#245d9a; --chart-bias:#72509a;
+ --chart-grid:var(--line); --chart-axis:var(--muted);
+}

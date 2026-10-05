@@ -1,19 +1,4 @@
 /* Shared navy and lime brand palette. Semantic warning/error colors stay distinct. */
-:root {
-  --navy: #101f3d;
-  --navy-light: #243c65;
-  --lime: #c5f35b;
-  --lime-hover: #d6ff7b;
-  --lime-soft: #f0f8dd;
-  --ink: #172947;
-  --muted: #62718a;
-  --line: #dde3ed;
-  --canvas: #f3f5f9;
-  --accent: #49651d;
-  --button-ink: var(--navy);
-  --button-border: var(--line);
-  --button-focus: #718f29;
-}
 ::selection { background: var(--lime); color: var(--navy); }
 input, select, textarea { accent-color: var(--navy); }
 body, .shell, .dataset-page { background: var(--canvas); color: var(--ink); }
@@ -41,12 +26,12 @@ body, .shell, .dataset-page { background: var(--canvas); color: var(--ink); }
 .demo-button>svg:first-child, .text-link, .text-button, .dataset-entry-link { color: var(--navy); }
 .mobile-menu-toggle { color: var(--lime); background: #ffffff0a; border-color: #ffffff30; }
 .mobile-menu-toggle[aria-expanded=true] { background: var(--lime); color: var(--navy); border-color: var(--lime); }
-.welcome-icon, .form-icon, .view-checkin .form-icon, .metric-symbol, .arrival-steps b { background: var(--lime-soft); color: var(--navy); border-color: #d9e6bc; }
+.welcome-icon, .form-icon, .view-checkin .form-icon, .metric-symbol, .arrival-steps b { background: var(--lime-soft); color: var(--navy); border-color: var(--border-brand); }
 .welcome-copy h2, .role-card .role-name, .role-card.selected .role-name, .role-card.selected svg, .panel h2, .panel h3, .section-heading h2, .patient-card h1, .patient-card h2, .dataset-heading h1, .dataset-metrics strong, .department-numbers strong, .token-receipt>strong { color: var(--navy); }
 .role-card.selected { background: var(--lime-soft); border-color: #8ea951; box-shadow: 0 0 0 3px #c5f35b20; }
 .role-card.selected .radio-mark { color: var(--navy); background: var(--lime); border-color: #8ea951; box-shadow: none; }
-.demo-pill, .preview-notice, .dataset-notice, .dataset-method { background: var(--lime-soft); color: #435623; border-color: #d9e6bc; }
-.privacy, .explanation, .period-chip, .display-controls { background: #edf1f7; color: var(--muted); border-color: var(--line); }
+.demo-pill, .preview-notice, .dataset-notice, .dataset-method { background: var(--lime-soft); color: #435623; border-color: var(--border-brand); }
+.privacy, .explanation, .period-chip, .display-controls { background: var(--surface-soft); color: var(--muted); border-color: var(--line); }
 .workspace-tools button[aria-pressed=true] { background: var(--navy); color: var(--lime); border-color: var(--navy); }
 .input-wrap:focus-within, .search-input:focus-within, :is(.product-field input,.product-field select,.product-field textarea,.queue-toolbar select,.product-table select):focus { border-color: #718f29; box-shadow: 0 0 0 4px #c5f35b30; }
 :is(button,a,input,select,textarea,[tabindex]):focus-visible, .product-shell button:focus-visible, .command-dialog button:focus-visible, .command-dialog input:focus-visible { outline-color: #718f29; }
@@ -54,30 +39,30 @@ body, .shell, .dataset-page { background: var(--canvas); color: var(--ink); }
 .product-shell .kpi-grid .metric-tone-0 { background: radial-gradient(ellipse at 100% 0, var(--navy-light), transparent 90%), var(--navy); border-color: #34496b; }
 .metric-tone-0 .metric-symbol { background: #c5f35b15; color: var(--lime); border-color: #c5f35b30; }
 .metric-tone-0 .metric-spark { color: var(--lime); }
-.product-shell .kpi-grid .metric-tone-1 { background: linear-gradient(135deg, #eaf5cd, #f6faec); border-color: #d9e6bc; }
-.metric-tone-1 .metric-symbol { color: #49651d; }
+.product-shell .kpi-grid .metric-tone-1 { background: linear-gradient(135deg, #eaf5cd, #f6faec); border-color: var(--border-brand); }
+.metric-tone-1 .metric-symbol { color: var(--accent); }
 .metric-spark { color: #648329; }
 .product-shell .kpi-grid .metric-card::before { background: linear-gradient(90deg, transparent, #a6c95380, transparent); }
 .product-shell .kpi-grid .metric-card:not(.metric-tone-0) strong { color: var(--navy); }
 .bar-row i { background: linear-gradient(90deg, #7f9f32, var(--lime)); }
 .analytics-charts .panel h2::before { background: var(--lime); }
-.insight-panel { background: linear-gradient(115deg, var(--lime-soft), #fbfcf7); border-color: #d9e6bc; }
+.insight-panel { background: linear-gradient(115deg, var(--lime-soft), #fbfcf7); border-color: var(--border-brand); }
 .insight-heading h2, .insight-grid strong { color: var(--navy); }
 .insight-grid svg, .insight-heading .section-label { color: #587326; }
 .insight-grid span, .insight-grid p { color: #566344; }
 .product-table th, .dataset-table th { background: #f0f3f8; color: var(--muted); }
 .product-table td strong, .dataset-table td strong, .board-token>strong { color: var(--navy); }
 .product-table tbody tr:hover { background: #f5f8ef; }
-.view-live .product-table td:first-child strong { color: var(--navy); background: var(--lime-soft); border-color: #d9e6bc; }
+.view-live .product-table td:first-child strong { color: var(--navy); background: var(--lime-soft); border-color: var(--border-brand); }
 .board-token { background: #fff; border-left-color: #9cbe46; }
 .token-actions a { color: var(--navy); background: #eef2f8; border-color: var(--line); }
-:is(.product-table button,.token-actions button):not([data-intent]):not(.subtle) { color: var(--navy); background: var(--lime-soft); border-color: #d9e6bc; }
+:is(.product-table button,.token-actions button):not([data-intent]):not(.subtle) { color: var(--navy); background: var(--lime-soft); border-color: var(--border-brand); }
 .patient-card { background: radial-gradient(ellipse at 50% 0, var(--lime-soft), transparent 65%), #fff; }
-.patient-wait, .patient-turn, .self-checkin-card .booking-reference { background: var(--lime-soft); color: var(--navy); border-color: #d9e6bc; }
+.patient-wait, .patient-turn, .self-checkin-card .booking-reference { background: var(--lime-soft); color: var(--navy); border-color: var(--border-brand); }
 .patient-wait p, .patient-turn p { color: #566344; }
 .view-checkin .token-receipt { background: radial-gradient(ellipse at 50% 0, var(--lime-soft), transparent 80%), #fff; border-color: #a1b677; }
 .dataset-nav .brand, .back-link, .command-heading, .command-heading h2, .preview-dialog h2 { color: var(--navy); }
-.command-results button:hover, .command-results button:focus-visible { background: var(--lime-soft); color: var(--navy); border-color: #d9e6bc; }
+.command-results button:hover, .command-results button:focus-visible { background: var(--lime-soft); color: var(--navy); border-color: var(--border-brand); }
 .reading-progress { background: var(--lime); box-shadow: 0 0 8px #c5f35b40; }
 .return-to-top { color: var(--navy); border-color: var(--line); }
 @media (hover:hover) {
@@ -89,10 +74,10 @@ body, .shell, .dataset-page { background: var(--canvas); color: var(--ink); }
 }
 
 /* A distinct patient entrance alongside staff sign-in. */
-.patient-tracking-entry{display:grid;grid-template-columns:44px minmax(0,1fr) 32px;align-items:start;gap:14px;margin:22px 0 24px;padding:20px;border:1px solid #cddbe7;border-radius:16px;background:linear-gradient(120deg,#eef4fa,#f8fbfc);text-decoration:none;color:var(--navy);box-shadow:0 3px 12px #17294706;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}
+.patient-tracking-entry{display:grid;grid-template-columns:44px minmax(0,1fr) 32px;align-items:start;gap:14px;margin:22px 0 var(--space-6);padding:var(--space-5);border:1px solid #cddbe7;border-radius:var(--radius-lg);background:linear-gradient(120deg,#eef4fa,#f8fbfc);text-decoration:none;color:var(--navy);box-shadow:0 3px 12px #17294706;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}
 .patient-tracking-entry:hover{border-color:#8ba6c0;background:linear-gradient(120deg,#e8f0f9,#f3f8fc);box-shadow:0 6px 20px #1729470d}
 .patient-tracking-entry:focus-visible{outline:3px solid var(--navy);outline-offset:4px}
-.patient-tracking-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:var(--navy);color:#fff;box-shadow:0 4px 10px #17294714}
+.patient-tracking-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:var(--radius-lg);background:var(--navy);color:#fff;box-shadow:0 4px 10px #17294714}
 .patient-tracking-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
 .patient-tracking-label{font-size:9px;letter-spacing:1.5px;font-weight:700;color:#607a95}
 .patient-tracking-copy strong{font-size:17px;line-height:1.35;letter-spacing:-.3px}
@@ -102,29 +87,29 @@ body, .shell, .dataset-page { background: var(--canvas); color: var(--ink); }
 @media(max-width:480px){.patient-tracking-entry{padding:17px;gap:11px;grid-template-columns:40px minmax(0,1fr) 28px}.patient-tracking-icon{width:40px;height:40px}.patient-tracking-arrow{width:28px;height:28px}.patient-tracking-copy strong{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.patient-tracking-entry{transition:none}}
 
-.planning-stack{display:flex;flex-direction:column;gap:22px}.planning-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0}.planning-fields fieldset{border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.planning-fields legend{font-size:12px;font-weight:600}.planning-checkbox{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.6;margin:12px 0 20px}.planning-checkbox input{flex-shrink:0;margin-top:3px;accent-color:var(--navy)}.planning-options{display:grid;gap:12px;margin:20px 0}.planning-options .panel h3{margin-top:0}.planning-stack details{margin-top:20px}.planning-stack summary{cursor:pointer;font-size:13px;font-weight:600;margin-bottom:14px}@media(max-width:800px){.planning-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.planning-fields{grid-template-columns:1fr}.planning-stack .button-row{flex-wrap:wrap}}
+.planning-stack{display:flex;flex-direction:column;gap:22px}.planning-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-4);margin:18px 0}.planning-fields fieldset{border:1px solid var(--line);border-radius:var(--radius-md);padding:var(--space-4);min-width:0}.planning-fields legend{font-size:12px;font-weight:600}.planning-checkbox{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.6;margin:var(--space-3) 0 var(--space-5)}.planning-checkbox input{flex-shrink:0;margin-top:3px;accent-color:var(--navy)}.planning-options{display:grid;gap:var(--space-3);margin:var(--space-5) 0}.planning-options .panel h3{margin-top:0}.planning-stack details{margin-top:var(--space-5)}.planning-stack summary{cursor:pointer;font-size:13px;font-weight:600;margin-bottom:14px}@media(max-width:800px){.planning-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.planning-fields{grid-template-columns:1fr}.planning-stack .button-row{flex-wrap:wrap}}
 
 .notification-inbox { margin: 22px 0; text-align: left; }
 .notification-inbox summary { display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:650; }
-.notification-inbox h2 { display:flex; align-items:center; gap:8px; }
-.notification-controls,.confirmation-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:18px 0; }
+.notification-inbox h2 { display:flex; align-items:center; gap:var(--space-2); }
+.notification-controls,.confirmation-row { display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); margin:18px 0; }
 .notification-list { max-height:460px; overflow:auto; }
-.notification-item { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:16px 12px; border-bottom:1px solid #e2e8df; }
+.notification-item { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-4); padding:var(--space-4) var(--space-3); border-bottom:1px solid #e2e8df; }
 .notification-item.unread { background:#f0f5ed; border-left:3px solid #527046; }
 .notification-item p { margin:7px 0; line-height:1.6; }
 .notification-item time { color:#667461; font-size:12px; }
 .notification-item button { flex-shrink:0; }
-.congestion-department { padding:20px 0; border-top:1px solid #e2e8df; }
-.risk-chip { display:inline-block; padding:5px 10px; border-radius:20px; background:#edf3e9; color:#3b5935; font-size:12px; font-weight:650; text-transform:capitalize; white-space:nowrap; }
+.congestion-department { padding:var(--space-5) 0; border-top:1px solid #e2e8df; }
+.risk-chip { display:inline-block; padding:5px 10px; border-radius:var(--radius-xl); background:#edf3e9; color:#3b5935; font-size:12px; font-weight:650; text-transform:capitalize; white-space:nowrap; }
 .risk-chip.warning,.risk-chip.medium { background:#fff1d8; color:#855a12; }
 .risk-chip.critical,.risk-chip.high { background:#fce8e4; color:#a13e31; }
 .risk-chip.closed { background:#eee; color:#666; }
-@media(max-width:640px){.notification-controls,.confirmation-row{align-items:stretch;flex-direction:column;}.notification-item{padding:12px 8px;gap:8px;}.notification-item button{padding:8px;}.congestion-panel .panel-heading{flex-wrap:wrap;}.notification-inbox summary{flex-wrap:wrap;}}
+@media(max-width:640px){.notification-controls,.confirmation-row{align-items:stretch;flex-direction:column;}.notification-item{padding:var(--space-3) var(--space-2);gap:var(--space-2);}.notification-item button{padding:var(--space-2);}.congestion-panel .panel-heading{flex-wrap:wrap;}.notification-inbox summary{flex-wrap:wrap;}}
 
-.tracking-qr { padding:18px; margin:18px 0; border:1px solid #dce5d5; border-radius:16px; background:#f8faf5; }
-.tracking-qr h3 { display:flex; align-items:center; justify-content:center; gap:8px; }
-.tracking-qr img { display:block; margin:12px auto; background:white; border-radius:8px; }
+.tracking-qr { padding:18px; margin:18px 0; border:1px solid #dce5d5; border-radius:var(--radius-lg); background:#f8faf5; }
+.tracking-qr h3 { display:flex; align-items:center; justify-content:center; gap:var(--space-2); }
+.tracking-qr img { display:block; margin:var(--space-3) auto; background:white; border-radius:var(--radius-sm); }
 .wait-comparison { display:block; margin:10px 0; font-size:13px; line-height:1.7; color:#526449; }
-.patient-card .wait-comparison { border:1px solid #dce5d5; border-radius:14px; padding:12px; background:#f8faf5; }
+.patient-card .wait-comparison { border:1px solid #dce5d5; border-radius:var(--radius-lg); padding:var(--space-3); background:#f8faf5; }
 .patient-card .patient-token-id { font-size:clamp(28px,7.5vw,56px); line-height:1.15; letter-spacing:-1px; overflow-wrap:anywhere; }
 .token-receipt>strong { overflow-wrap:anywhere; }

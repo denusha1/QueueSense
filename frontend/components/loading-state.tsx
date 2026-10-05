@@ -1,0 +1,1 @@
+export function LoadingState({label='Loading clinic data…'}:{label?:string}){return <section className="loading-state" role="status" aria-label={label}><p>{label}</p><div className="skeleton-metrics" aria-hidden="true">{[0,1,2].map(n=><div key={n}><i/><b/><i/></div>)}</div><div className="skeleton-table" aria-hidden="true">{[0,1,2,3].map(n=><i key={n}/>)}</div></section>;}

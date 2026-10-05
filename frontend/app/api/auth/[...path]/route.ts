@@ -3,12 +3,13 @@ import { authApi } from '../../../../services/auth';
 
 export const dynamic = 'force-dynamic';
 const routes: Record<string, string[]> = { login: ['POST'], logout: ['POST'], me: ['GET'], demo: ['GET', 'POST'] };
+const accountRoutes=/^(?:profile|password|sessions(?:\/[a-f0-9-]+\/revoke)?|mfa\/(?:setup|confirm|disable)|recovery\/(?:request|reset|admin\/[a-f0-9-]+))$/;
 const noStore = { 'Cache-Control': 'no-store' };
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
   const endpoint = path.join('/');
-  if (!routes[endpoint]?.includes(request.method)) return NextResponse.json({ detail: 'Not found.' }, { status: 404, headers: noStore });
+  if (!routes[endpoint]?.includes(request.method) && !(accountRoutes.test(endpoint) && ['GET','POST'].includes(request.method))) return NextResponse.json({ detail: 'Not found.' }, { status: 404, headers: noStore });
   const origin = request.headers.get('origin') ?? '';
   const allowedOrigins = (process.env.FRONTEND_ORIGINS ?? 'http://127.0.0.1:3001,http://localhost:3001').split(',').map(value => value.trim());
   let sameHost = false;

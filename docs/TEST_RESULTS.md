@@ -53,3 +53,75 @@ Not executed here: Docker build/Compose, hosted CI run, cloud deployment or real
 - Existing `planning.cjs` passed after queue-order changes; `automation.cjs` passed with the shared live-prediction service, including automatic reminders, confirmation/risk updates, congestion warnings, inbox delivery and worker health.
 - Initial predictions are retained at check-in; changing live estimates do not overwrite them. Monitoring evaluates the latest stored pre-service prediction or the retained snapshot, including operational fallbacks. Standard unrestricted queues use the existing synthetic-data Random Forest; priority/restricted queues use compatible-clinician capacity because the training features do not model those policies. Missing/failed/non-finite inference falls back safely; no compatible coverage returns an unavailable estimate.
 - Migration `011_checkin_predictions.sql` was applied with runtime grants; the review API and final frontend build were restarted on **8002 / 3002**. Other applications on port 3001 were preserved. QR image checks wait for loading and clipboard checks explicitly grant browser permission. The mobile token heading now scales/wraps long department codes instead of overflowing.
+
+## QueueSense visual identity and patient journey
+
+- Added a shared connected-dot flow motif on the welcome page, workspace headers, QR tracking cards, patient token cards and trend charts. The welcome page illustrates the five-step care journey without presenting it as live data.
+- Staff headers now use a compact layout; live/board screens show all five queue metrics in one desktop row. The live queue table begins within the first 850px of the desktop viewport in browser verification.
+- Sidebar destinations are grouped into Daily operations, Insights and Administration using the existing signed-in role filters. Empty groups are omitted; mobile groups use the existing expandable menu, and navigation closes it after selecting a destination. Desktop navigation scrolls within the sidebar.
+- Private patient pages place the token and next action before the journey. Current steps use `aria-current="step"`; mobile uses a vertical timeline. Called patients see a prominent navy next-step card. Missed/cancelled tokens stop at their appropriate stage and do not mark service/completion as reached.
+- `npm run build --prefix frontend`: production build and TypeScript passed.
+- `BASE_URL=http://127.0.0.1:3002 node frontend/tests/flow-design.cjs`: passed for shared motif, compact layout, grouped role access, mobile navigation, patient next-step visibility, called highlight, missed/cancelled progress and viewport overflow.
+- Existing `core-queue.cjs` passed for priority/QR check-in, all live states, private tracking, automatic performance refresh and mobile layouts. Existing `experience.cjs` passed for feedback, health and PWA/offline behavior.
+- Changes are limited to frontend presentation. The final review frontend was rebuilt and restarted on port 3002.
+
+## Readable typography, semantic states and shared design tokens
+
+- Consolidated palette, type sizes, spacing, radii and shadows into `frontend/app/design-tokens.css`; removed overlapping colour roots from legacy style files. Shared readability rules load after existing layouts.
+- Body copy and table cells use 14px, form controls 16px, labels 12–13px and numeric values tabular figures. Desktop live queue controls stay on one row while mobile layouts retain wrapping.
+- Queue badges and live metrics share amber waiting, blue called, teal in-service, green completed and muted red missed states. Checked-in appointments and service-health badges use the same semantic system. Five actual queue badges passed 4.5:1 text/background contrast verification.
+- Prediction charts use solid navy actual waits and dashed lime predictions with a dark outline for visibility on white. Legends match the lines; keyboard readouts and series toggles remain functional.
+- Production build and TypeScript checks passed. `readability.cjs` passed against synthetic real queue states and prediction chart data. `flow-design.cjs` passed for compact headers, first-screen live table, grouped role navigation and mobile/private patient journey. `premium-ui.cjs` passed for chart controls, reduced motion, pointer lighting, command navigation and all 16 workspace views at 375/768/1440px without page overflow.
+- Final review frontend restarted on port 3002. Backend behaviour was unchanged by these presentation updates.
+
+## Workspace chooser and sign-in presentation
+
+- Redesigned the content below “Choose your workspace” with a two-column role card grid, role-specific tool chips, navy/lime selected cards and hover/focus treatment. Selecting a role updates a concise workspace description through a polite live region.
+- Staff sign-in uses a dedicated form panel; demo access has its own panel and dataset link. Existing authentication, account-based authorization, password visibility and demo confirmation remain in place.
+- Production build and TypeScript checks passed. Local Chromium checks passed for all four selections, dynamic descriptions/action labels, arrow-key radio navigation, password visibility, layouts at 375/768/1440px and manager demo sign-in. Screenshots were reviewed at desktop and mobile widths; no page or card overflow was observed.
+- Review frontend restarted on port 3002.
+
+## Staff sign-in card styling
+
+- Added a navy gradient header with a shield icon, selected-role badge and decorative patient-flow motif. The light form body now uses larger icon fields, visible focus treatment, a styled password toggle, a readable account-access note and a lime action with a separate arrow.
+- Production build and TypeScript checks passed. Chromium verified 320/375/768/1440px layouts without page/form overflow, role badge updates, password visibility and recovery messaging. An intercepted synthetic login verified the existing email/password/role payload and rejected-login recovery without sending credentials to the backend. Desktop and mobile form screenshots were reviewed.
+- Review frontend restarted on port 3002.
+
+## Welcome page background
+
+- Added scoped navy/lime ambient lighting, a faint dot grid and decorative connected routes behind the welcome surfaces. The navy story panel has a subtle architectural grid and contour rings; the entry panel retains a light readable surface.
+- Background layers are hidden from assistive technology and never capture pointer events. High-contrast and forced-colour modes remove the decorative patterns. The effects are static and introduce no motion or external assets.
+- Production build/TypeScript and Chromium checks passed: 320/375/768/1440px without page overflow, contrast preference, role/password controls, demo dialog and patient tracking navigation. Desktop background screenshot reviewed. The updated review frontend runs on port 3002.
+
+## Ten-row table pagination
+
+- Added shared pagination to every rendered table: live tokens, appointments, generic analytics/report/schedule/import/feedback tables, users, model versions, hourly staffing recommendations, congestion horizons and demo sample records. Controls appear only above 10 rows; desktop has numbered pages and Previous/Next, with a compact page counter and 44px controls on mobile.
+- Search/filter/sort changes reset the selected page. Live queue refreshes retain the current page; shrinking datasets clamp to the last valid page. Cell handlers and private patient links are preserved. Summaries distinguish filtered matches from visible rows; audit records retain the API's existing 200-record batches with clearly labelled batch controls and 10-row pages within each batch.
+- Production build and TypeScript passed. `pagination.cjs` passed for 0/10/11/25 rows, boundaries, actions/private links on page 2, live refresh preservation, shrinking data, search/sort resets, responsive widths and dataset/analytics tables. `premium-ui.cjs` passed for all 16 workspace views at 375/768/1440px, mobile navigation and existing interactive controls. Desktop live-table screenshot reviewed.
+- Final review frontend restarted on port 3002; no backend/API limits or export cohorts were changed.
+
+## Personalised workspaces, loading states, patient freshness and reception quick desk
+
+- Workspace preferences now provide favourite destinations, named filter presets (up to eight), and custom date ranges. Browser storage is scoped to account ID and role; saved destinations are restricted to the user's available navigation. Saved filters exclude private links, token searches and patient data. Doctor live metrics prioritise their assigned called/in-service patients.
+- Initial/context loading shows accessible skeletons; background refresh retains existing data instead of clearing tables/charts. Errors include retry and explain when previously loaded information remains visible. Queue empty states offer clear-filter and authorised check-in actions. Reduced-motion mode disables skeleton animation.
+- Patient tracking shows the last successful update, stale/error indication, manual retry/refresh, unavailable-position handling, recent distinct estimate ranges and increased-estimate notices. Ranges describe observed updates on the current page, not a calibrated prediction interval or guaranteed call window. Existing next-step prompts and live status transitions remain prominent.
+- Reception/admin live screens include a collapsible quick desk for check-in with existing priority/service/language/continuity rules, token-search focus, clinician selection/call-next and token receipt reprint. Receipts retain private tracking QR/link controls; printing waits for QR decode and print CSS includes only the selected receipt. Closed desk layouts keep the live table in the first desktop screen.
+- Production build/TypeScript and `workspace-upgrades.cjs` passed: controlled initial loading, persisted favourites/presets, custom ranges, synthetic reception check-in/call/search, private receipt and print-only PDF, patient freshness/range/called transitions, failed-refresh recovery and responsive layouts.
+- Existing `flow-design.cjs`, `premium-ui.cjs` and `core-queue.cjs` passed for compact layout, grouped role navigation, private patient journeys, all 16 views at 375/768/1440px, priority queue order, QR/copy, automatic prediction monitoring and service transitions. Reception/patient screenshots were reviewed. Review frontend restarted on port 3002; backend authorization and prediction behavior were unchanged.
+- Existing `pagination.cjs` also passed after the loading/preset changes: 0/10/11/25 rows, live page preservation/shrink clamping, filter/sort resets, private row actions and sample/analytics tables.
+
+## Languages, external delivery, server paging, account security and fixed welcome panel
+
+- Patient entry/tracking and public check-in support English/Tamil/Sinhala and persistent larger-text controls. Core journey/status, estimates, doctor options, feedback and notification settings use translated UI; clinic-issued notices/names remain in their original language.
+- Verified, explicit opt-in email/SMS and browser Push subscriptions use encrypted destinations. SMTP/Twilio/Web Push adapters, generic lock-screen-safe messages, destination removal and a durable de-duplicated retry outbox are implemented. Real provider credentials are absent: mocked adapter/delivery tests passed; no live external delivery is claimed. Configuration and limits are documented in `docs/ACCOUNTS_AND_NOTIFICATIONS.md` and `.env.example`, including Docker environment passthrough.
+- Live queue, audit and administration user tables load server-filtered ten-record pages. Counts and queue KPIs cover the full selected cohort. PostgreSQL coverage verifies 605 tokens, stable last-page boundaries, clamping, literal wildcard search, validated ordering/page sizes and role boundaries. Aggregate/other tables and the department board retain their documented existing endpoint limits.
+- All staff roles have profile/session/password controls. Recovery hashes one-time, expiring codes and revokes old sessions. Personal administrators can enrol an authenticator; MFA confirmation revokes sessions and login rejects reused time steps. Demo credentials/MFA enrolment are protected. Sensitive secrets/passwords do not enter audit details.
+- Desktop welcome uses a full-viewport blue story panel with no scrolling and an independently scrolling entry panel. Browser checks cover 600/720/900/1080px heights, content fitting above the footer, and normal 375px mobile scrolling. Mobile tracking spacing preserves first-screen next-step instructions.
+- Final production build/TypeScript passed. Complete backend suite: **64 passed** against isolated PostgreSQL schemas. Dependency compatibility and `git diff --check` passed. Migration 012 and runtime grants applied locally; review API/frontend restarted on 8002/3002.
+- `next-upgrades.cjs` passed: fixed desktop/scroll/mobile layout, persistent Tamil/Sinhala/larger text, translated private patient/public kiosk screens, server paging/search/full counts, explicit unconfigured-provider states, account profile/session UI, personal admin MFA enrolment and sign-in, recovery page, and no browser errors.
+- `pagination.cjs`, `flow-design.cjs` and `workspace-upgrades.cjs` passed with asynchronous server-page assertions/interceptions. Coverage preserves 0/10/11/25 rows, page-two private links/actions, refresh preservation and shrink clamping, filter resets, grouped role navigation, compact queue table, patient called/missed/cancelled journeys, reception check-in/receipt print, browser preferences and failed-refresh recovery. Welcome and mobile patient screenshots were inspected.
+
+## Department queue board pagination
+
+- Board cards now use shared page controls, showing ten filtered tokens per page. Controls appear only above ten results, preserve patient links/actions, reset on department/search/status/order changes, and retain/clamp the selected page during live refreshes. The existing board endpoint's 500-token limit remains.
+- Production build/TypeScript and extended `pagination.cjs` passed. Browser coverage includes 24 active cards over three pages, page-two private links, filter/search resets, shrinking to 11/10/0 records, page clamping, empty states, and mobile Previous/Next controls without horizontal overflow. Existing live, sample and analytics table pagination passed in the same run. Local frontend restarted on port 3002.

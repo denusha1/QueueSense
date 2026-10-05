@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authApi } from '../../../../services/auth';
 export const dynamic='force-dynamic';
+const expanded=/^(delivery\/targets(?:\/(?:push|(?:email|sms|push)\/(?:verify|disable)))?|queue\/page|audit\/page|admin\/users\/page|admin\/doctor-options|(?:patient|self-checkin)\/[A-Za-z0-9_-]{30,80}\/delivery(?:\/(?:push|(?:email|sms|push)\/(?:verify|disable)))?)$/;
 const allow=/^(notifications(?:\/[a-f0-9-]+\/read)?|appointments(?:\/(?:slots|risks)|\/[a-f0-9-]+\/cancel)?|checkin\/kiosks(?:\/[a-f0-9-]+\/revoke)?|self-checkin\/[A-Za-z0-9_-]{30,80}(?:\/(?:qr|confirm|notifications(?:\/[a-f0-9-]+\/read)?))?|departments|staff(?:\/[a-f0-9-]+\/(?:availability|call-next))?|schedules|queue\/(?:live|events|check-in|[a-f0-9-]+\/(?:status|close))|planning\/(?:doctors|balance|forecast|simulate|congestion)|feedback\/summary|health\/services|analytics\/summary|simulation\/staffing|models\/performance|predict\/wait-time|alerts(?:\/(?:refresh|[a-f0-9-]+\/resolve))?|admin\/(?:users(?:\/[a-f0-9-]+)?|departments(?:\/[a-f0-9-]+)?|staff(?:\/[a-f0-9-]+\/(?:schedule|profile))?)|audit|data\/import|reports\/export|patient\/[A-Za-z0-9_-]{30,80}(?:\/(?:events|feedback|doctors|qr|notifications(?:\/[a-f0-9-]+\/read)?))?)$/;
 async function proxy(request:NextRequest,context:{params:Promise<{path:string[]}>}){
  const endpoint=(await context.params).path.join('/');
- if(!allow.test(endpoint))return NextResponse.json({detail:'Not found.'},{status:404});
+ if(!allow.test(endpoint)&&!expanded.test(endpoint))return NextResponse.json({detail:'Not found.'},{status:404});
  const origin=request.headers.get('origin')??'';
  if(request.method!=='GET'){
   const allowed=(process.env.FRONTEND_ORIGINS??'http://127.0.0.1:3001,http://localhost:3001').split(',').map(x=>x.trim());

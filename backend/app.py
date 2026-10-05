@@ -61,6 +61,7 @@ class Credentials(BaseModel):
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=1, max_length=128)
     role: Role
+    otp: str | None = Field(default=None, max_length=6)
 
     @field_validator('email')
     @classmethod
@@ -118,16 +119,16 @@ def create_app(settings=None):
             raise HTTPException(401, 'Your session has ended. Please sign in again.')
         return user
 
-    def issue_session(conn, user, response, old_token):
+    def issue_session(conn, user, response, old_token, device='Browser session'):
         token = secrets.token_urlsafe(32)
         if old_token:
             conn.execute('DELETE FROM auth_sessions WHERE token_hash=%s', (digest(old_token),))
         conn.execute('DELETE FROM auth_sessions WHERE expires_at <= now()')
-        row = conn.execute("INSERT INTO auth_sessions(token_hash,user_id,expires_at) VALUES(%s,%s,now() + %s * interval '1 second') RETURNING expires_at", (digest(token), user['id'], settings.session_seconds)).fetchone()
+        row = conn.execute("INSERT INTO auth_sessions(token_hash,user_id,device_label,expires_at) VALUES(%s,%s,%s,now() + %s * interval '1 second') RETURNING expires_at", (digest(token), user['id'], device[:160], settings.session_seconds)).fetchone()
         response.set_cookie(COOKIE, token, httponly=True, secure=settings.secure_cookie, samesite='lax', max_age=settings.session_seconds, path='/')
         return {'id': str(user['id']), 'email': user['email'], 'role': user['role'], 'expires_at': row['expires_at']}
 
-    def authenticate(email, role, request, response, password=None, demo=False):
+    def authenticate(email, role, request, response, password=None, demo=False, otp=None):
         account_hash = digest(email)
         source_hash = digest(request.client.host if request.client else 'unknown')
         error = None
@@ -152,11 +153,18 @@ def create_app(settings=None):
                 error = HTTPException(401, 'Email or password is incorrect, or the account is unavailable.')
             elif user['role'] != role:
                 error = HTTPException(403, 'This account does not have access to the selected workspace.')
+            if error is None:
+                from backend.security import decrypt,verify_totp
+                mfa=conn.execute('SELECT * FROM account_mfa WHERE user_id=%s AND enabled FOR UPDATE',(user['id'],)).fetchone()
+                if mfa:
+                    step=None if demo else verify_totp(decrypt(mfa['secret_encrypted']),otp,mfa['last_step'])
+                    if step is None:error=HTTPException(401,'Authentication code is required or invalid.')
+                    else:conn.execute('UPDATE account_mfa SET last_step=%s WHERE user_id=%s',(step,user['id']))
             conn.execute('INSERT INTO login_attempts(account_hash,source_hash,succeeded) VALUES(%s,%s,%s)', (account_hash, source_hash, error is None))
             if error is None:
                 if not demo and HASHER.check_needs_rehash(user['password_hash']):
                     conn.execute('UPDATE users SET password_hash=%s WHERE id=%s', (HASHER.hash(password), user['id']))
-                result = issue_session(conn, user, response, request.cookies.get(COOKIE))
+                result = issue_session(conn, user, response, request.cookies.get(COOKIE),request.headers.get('user-agent','Browser session'))
                 from backend.product import audit
                 audit(conn,user,'sign_in','user',user['id'],{'demo':demo})
         # Raise outside the transaction so failed-attempt records are committed.
@@ -166,7 +174,7 @@ def create_app(settings=None):
 
     @app.post('/auth/login')
     def login(body: Credentials, request: Request, response: Response):
-        return authenticate(body.email, body.role, request, response, body.password)
+        return authenticate(body.email, body.role, request, response, body.password,otp=body.otp)
 
     @app.get('/auth/demo')
     def demo_status():
@@ -206,6 +214,12 @@ def create_app(settings=None):
             conn.execute('SELECT 1 FROM auth_sessions LIMIT 1')
         return {'status': 'ok'}
 
+    from backend.accounts import attach_accounts
+    attach_accounts(app,settings,current_user,issue_session)
+    from backend.delivery import attach_delivery
+    attach_delivery(app,settings,current_user)
+    from backend.table_pages import attach_table_pages
+    attach_table_pages(app,settings,current_user)
     from backend.product import attach_product
     attach_product(app, settings, current_user)
     from backend.experience import attach_experience

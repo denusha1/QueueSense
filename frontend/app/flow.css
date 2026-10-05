@@ -1,0 +1,106 @@
+/* QueueSense connected-dot identity, workspace density and patient journey. */
+.flow-pattern { display:block; width:100%; height:auto; color:var(--lime); pointer-events:none; }
+.story-flow { max-width:230px; margin:0 0 22px; opacity:.7; }
+.workspace-flow { position:absolute; width:220px; right:148px; bottom:13px; opacity:.18; z-index:-1; }
+.receipt-flow { width:120px; margin:0 auto var(--space-3); color:var(--accent); }
+.chart-flow-heading { display:flex; align-items:center; gap:9px; margin-bottom:var(--space-3); color:var(--muted); font-size:10px; }
+.chart-flow { width:62px; color:var(--accent); }
+
+/* Put working information near the top of every staff screen. */
+.product-shell .page-heading { min-height:0; padding:21px 26px; margin-bottom:var(--space-4); border-radius:var(--radius-xl); gap:var(--space-6); align-items:center; }
+.product-shell .page-heading .hero-copy { max-width:none; min-width:0; flex:1; }
+.product-shell .page-heading h1 { font-size:clamp(24px,2.1vw,32px); line-height:1.15; margin:7px 0 var(--space-2); letter-spacing:-.8px; }
+.product-shell .page-heading p:last-child { margin-bottom:0; line-height:1.55; }
+.product-shell .hero-actions { flex-direction:row; align-items:center; align-self:center; gap:var(--space-3); padding-top:0; }
+.product-shell .hero-badge { font-size:9px; padding:7px 9px; }
+.product-shell .notification-inbox { margin:var(--space-3) 0 var(--space-4); }
+.product-shell details.notification-inbox.panel.padded { padding:15px var(--space-5); border-radius:var(--radius-lg); }
+.product-shell .filter-row { padding:14px 18px; margin-bottom:var(--space-4); }
+.product-shell .view-live { min-width:0; }
+.product-shell:is(.view-live,.view-board) .kpi-grid { grid-template-columns:repeat(5,minmax(0,1fr)); gap:var(--space-3); margin:0 0 18px; }
+.product-shell:is(.view-live,.view-board) .kpi-grid .metric-card { min-height:116px; padding:15px 17px; }
+.product-shell:is(.view-live,.view-board) .metric-card .metric-symbol { width:27px; height:27px; margin-bottom:var(--space-2); }
+.product-shell:is(.view-live,.view-board) .metric-card strong { font-size:30px; margin:var(--space-1) 0; }
+.product-shell:is(.view-live,.view-board) .metric-card .metric-category,.product-shell:is(.view-live,.view-board) .metric-spark { display:none; }
+.product-shell:is(.view-live,.view-board) .metric-card small { font-size:9px; margin-top:5px; }
+.product-shell .workspace-tools { margin-bottom:15px; }
+
+/* Group navigation without exposing destinations outside the signed-in role. */
+.product-sidebar #workspace-nav { flex:1; min-height:0; display:flex; flex-direction:column; overflow-y:auto; gap:0; padding:0 2px var(--space-2); margin-top:var(--space-5); scrollbar-width:thin; scrollbar-color:#607492 transparent; }
+.nav-group { display:flex; flex-direction:column; gap:3px; }
+.product-sidebar .nav-group-heading { margin:19px 10px 9px; font-size:10px; line-height:1.5; font-weight:650; letter-spacing:1.3px; text-transform:uppercase; color:#a7bbd4; }
+.nav-group:first-child .nav-group-heading { margin-top:0; }
+.product-sidebar .nav-group button { width:100%; flex-shrink:0; }
+.product-sidebar .sidebar-bottom { flex-shrink:0; padding-top:var(--space-3); margin-top:var(--space-2); }
+
+/* The same five points form the visual identity and the real patient journey. */
+.queue-journey ol { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:0; margin:0; list-style:none; }
+.queue-journey li { position:relative; min-width:0; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; }
+.queue-journey li:not(:last-child)::after { content:''; position:absolute; height:2px; background:var(--line); top:18px; left:calc(50% + 22px); right:calc(-50% + 22px); }
+.journey-node { width:38px; height:38px; display:grid; place-items:center; flex-shrink:0; border-radius:50%; border:1px solid var(--line); background:#fff; color:var(--muted); position:relative; z-index:1; }
+.journey-label { color:var(--muted); font-size:11px; line-height:1.5; }
+.journey-label small { display:block; font-size:10px; margin-top:var(--space-1); }
+.queue-journey .done .journey-node { background:var(--navy); border-color:var(--navy); color:var(--lime); }
+.queue-journey .done::after { background:var(--navy); }
+.queue-journey .current .journey-node { background:var(--lime); border-color:#abc85b; color:var(--navy); box-shadow:0 0 0 5px var(--lime-soft); }
+.queue-journey .current .journey-label { color:var(--navy); font-weight:700; }
+.journey-stopped .current .journey-node { background:#fff1e8; border-color:#d6a18c; color:#934938; box-shadow:none; }
+.journey-story { margin:28px 0 var(--space-6); }
+.journey-story .journey-node { background:#ffffff0a; border-color:#ffffff35; color:var(--lime); width:32px; height:32px; }
+.journey-story li:not(:last-child)::after { background:#ffffff30; top:15px; left:calc(50% + 19px); right:calc(-50% + 19px); }
+.journey-story .journey-label { color:#bfcae0; font-size:11px; }
+.journey-patient { margin:28px 0 var(--space-6); }
+.patient-tracker { max-width:560px; position:relative; }
+.patient-flow { width:112px; margin:0 auto 15px; color:var(--accent); }
+.patient-department { color:var(--muted); margin:var(--space-5) 0 var(--space-3); }
+.patient-token-label { display:block; font-size:11px; color:var(--muted); }
+.patient-tracker .patient-token-id { margin:var(--space-2) 0 var(--space-4); font-size:clamp(28px,7.5vw,54px); }
+.patient-next-step { margin:23px 0 0; border:1px solid var(--border-brand); border-radius:var(--radius-xl); padding:22px; background:var(--lime-soft); color:var(--navy); }
+.patient-next-step>.section-label { display:block; margin-bottom:15px; font-size:10px; }
+.patient-next-step>svg { display:block; margin:0 auto var(--space-3); }
+.patient-next-step h2 { margin:10px 0; font-size:23px; }
+.patient-next-step p { font-size:13px; line-height:1.7; }
+.patient-next-step h2 strong { display:block; font-size:52px; line-height:1.15; margin:9px 0; }
+.patient-next-step .patient-position { font-weight:650; }
+.patient-next-step.step-called { background:var(--navy); border-color:var(--navy-light); color:#fff; box-shadow:0 10px 24px #101f3d18; }
+.patient-next-step.step-called h2 { color:#fff; font-size:28px; }
+.patient-next-step.step-called>.section-label,.patient-next-step.step-called>svg { color:var(--lime); }
+.patient-next-step.step-called p { color:#d3ddec; }
+.patient-next-step:is(.step-no_show,.step-cancelled) { background:#fff6f2; border-color:#efd5cb; }
+
+@media(max-width:1150px) {
+ .product-shell .hero-badge { display:none; }
+ .product-shell:is(.view-live,.view-board) .kpi-grid { gap:9px; }
+ .product-shell:is(.view-live,.view-board) .kpi-grid .metric-card { padding:13px; }
+}
+@media(max-width:850px) {
+ .product-sidebar #workspace-nav { display:none; margin-top:var(--space-4); padding-top:14px; border-top:1px solid #ffffff20; overflow:visible; }
+ .product-sidebar.menu-open #workspace-nav { display:flex; }
+ .nav-group { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+ .product-sidebar .nav-group-heading { grid-column:1/-1; margin:var(--space-4) var(--space-1) var(--space-2); }
+ .product-shell .page-heading { padding:18px var(--space-5); min-height:0; }
+ .product-shell .hero-actions { margin-top:0; }
+ .product-shell .workspace-flow { width:170px; right:100px; }
+ .product-shell:is(.view-live,.view-board) .kpi-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(max-width:480px) {
+ .product-shell .page-heading { display:flex; align-items:flex-start; padding:18px var(--space-4); gap:var(--space-3); }
+ .product-shell .page-heading h1 { font-size:24px; }
+ .product-shell .page-heading .section-label { font-size:8px; letter-spacing:1.2px; }
+ .product-shell .page-heading p:last-child { font-size:12px; }
+ .product-shell .hero-actions { flex-shrink:0; }
+ .product-shell .page-heading .refresh-button { min-width:36px; padding:9px; font-size:10px; }
+ .product-shell .workspace-flow { width:110px; right:65px; bottom:7px; opacity:.14; }
+ .product-shell details.notification-inbox.panel.padded { padding:13px 14px; }
+ .product-shell:is(.view-live,.view-board) .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .product-shell:is(.view-live,.view-board) .kpi-grid .metric-card { min-height:106px; }
+ .journey-story .journey-label { font-size:10px; }
+ .journey-patient ol { grid-template-columns:1fr; gap:0; padding:0 var(--space-3); }
+ .journey-patient li { flex-direction:row; gap:15px; text-align:left; min-height:56px; }
+ .journey-patient li:not(:last-child)::after { width:2px; height:auto; top:40px; bottom:-1px; left:18px; right:auto; }
+ .journey-patient .journey-label { font-size:13px; }
+ .journey-patient .journey-label small { display:inline; margin-left:var(--space-2); font-size:11px; }
+ .patient-next-step { padding:var(--space-5) var(--space-4); }
+ .patient-next-step h2 { font-size:21px; }
+ .patient-next-step h2 strong { font-size:46px; }
+}

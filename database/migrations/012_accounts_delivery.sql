@@ -1,0 +1,14 @@
+ALTER TABLE users ADD COLUMN display_name text NOT NULL DEFAULT '';
+ALTER TABLE users ADD COLUMN preferred_language text NOT NULL DEFAULT 'en' CHECK(preferred_language IN ('en','ta','si'));
+ALTER TABLE auth_sessions ADD COLUMN id uuid NOT NULL DEFAULT gen_random_uuid();
+ALTER TABLE auth_sessions ADD COLUMN device_label text NOT NULL DEFAULT 'Browser session';
+CREATE UNIQUE INDEX auth_session_id_idx ON auth_sessions(id);
+CREATE TABLE account_mfa(user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,secret_encrypted text NOT NULL,enabled boolean NOT NULL DEFAULT false,last_step bigint NOT NULL DEFAULT -1,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE account_recovery(token_hash text PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE security_attempts(bucket text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX security_attempts_bucket_idx ON security_attempts(bucket,created_at DESC);
+CREATE TABLE notification_targets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_type text NOT NULL CHECK(owner_type IN ('staff','patient','appointment')),owner_id uuid NOT NULL,channel text NOT NULL CHECK(channel IN ('email','sms','push')),destination_encrypted text NOT NULL,masked text NOT NULL,verification_hash text,verification_expires timestamptz,verification_attempts integer NOT NULL DEFAULT 0,verified_at timestamptz,enabled boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(owner_type,owner_id,channel));
+CREATE TABLE notification_deliveries(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),notification_id uuid NOT NULL REFERENCES notifications(id),target_id uuid NOT NULL REFERENCES notification_targets(id) ON DELETE CASCADE,state text NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','sent','failed','cancelled')),attempts integer NOT NULL DEFAULT 0,next_attempt timestamptz NOT NULL DEFAULT now(),sent_at timestamptz,last_error text,UNIQUE(notification_id,target_id));
+CREATE INDEX delivery_pending_idx ON notification_deliveries(next_attempt) WHERE state='pending';
+CREATE INDEX queue_today_search_idx ON queue_tokens(session_id,status,check_in_at,id);
+CREATE INDEX audit_action_time_idx ON audit_logs(created_at DESC,id DESC);

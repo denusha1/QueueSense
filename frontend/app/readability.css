@@ -1,0 +1,96 @@
+/* Consistent type, semantic states and surfaces across every role. */
+body { font-family:var(--font-body); font-size:var(--text-body); line-height:1.6; }
+:is(.product-body,.patient-card,.login-content,.dataset-page) :is(p,.quiet,.footnote,.explanation,.product-notice,.product-error,.empty) { font-size:var(--text-body); line-height:1.7; }
+:is(.product-body,.patient-card,.login-content) :is(.quiet,.footnote) { color:var(--muted); }
+:is(.product-field,.field-label,.field-label label) { font-size:var(--text-label); }
+.product-field>span,.field-label,.planning-fields legend { font-size:var(--text-label); }
+:is(.product-field input,.product-field select,.product-field textarea,.input-wrap input,.queue-toolbar select,.search-input input,.product-table select) { font-size:var(--text-input); line-height:1.5; }
+:is(.primary-button,.demo-button,.solid,.outline,.workspace-signout,.refresh-button,.text-link,.text-button,.product-table button,.token-actions button,.token-actions a) { font-size:var(--text-label); }
+:is(.product-table,.dataset-table) { font-size:var(--text-body); }
+:is(.product-table,.dataset-table) th { font-size:var(--text-small); letter-spacing:.4px; }
+:is(.product-table,.dataset-table) :is(td,b,strong),.metric-card strong,.patient-next-step h2 strong,.patient-token-id,.booking-reference,.chart-readout b { font-variant-numeric:tabular-nums; }
+.product-sidebar .nav-group button { font-size:var(--text-label); line-height:1.5; white-space:normal; text-align:left; }
+.product-sidebar .nav-group-heading { font-size:var(--text-small); letter-spacing:1px; }
+.product-top>span,.account-email,.clinic-identity strong,.product-footer { font-size:var(--text-small); }
+:is(.account-email small,.clinic-identity small,.sidebar-bottom,.sidebar-bottom small) { font-size:var(--text-micro); }
+.product-shell .page-heading p:last-child { font-size:var(--text-body); }
+:is(.section-label,.patient-tracking-label,.small-label,.story-edition,.eyebrow) { font-size:var(--text-small); letter-spacing:1.2px; }
+:is(.role-card .role-name,.patient-tracking-description,.patient-tracking-action,.auth-note,.demo-note,.privacy p) { font-size:var(--text-body); }
+.role-card .role-description { font-size:var(--text-small); line-height:1.5; }
+.role-card { min-height:132px; }
+:is(.entry-header,.entry-footer,.story-footer,.features,.story .metric-grid p,.story .chart-header,.story .chart-times,.snapshot-bottom) { font-size:var(--text-small); }
+.story .intro { font-size:16px; }
+:is(.patient-token-label,.journey-label,.journey-label small,.patient-next-step>.section-label,.patient-position,.patient-card footer) { font-size:var(--text-small); }
+.patient-next-step p { font-size:var(--text-body); }
+.patient-card .patient-department { color:var(--muted); }
+.patient-card .patient-next-step.step-called p { color:var(--text-on-dark); }
+.patient-card .step-called>.section-label { color:var(--lime); }
+.product-shell:is(.view-live,.view-board) .metric-card>span { font-size:var(--text-label); }
+.product-shell:is(.view-live,.view-board) .metric-card small { font-size:var(--text-small); }
+.chart-flow-heading,.chart-legend,.chart-legend button,.chart-readout,.bar-row,.bar-row>span,.bar-row b { font-size:var(--text-small); line-height:1.6; }
+.chart-legend button { min-height:40px; }
+.chart-legend .chart-swatch { display:block; width:28px; height:12px; flex-shrink:0; }
+.chart-readout { color:var(--muted); background:var(--surface-soft); border-color:var(--line); border-radius:var(--radius-md); padding:var(--space-3); }
+.chart-readout strong,.chart-readout b { color:var(--ink); }
+.bar-row>div { background:var(--surface-soft); }
+.bar-row i { background:var(--chart-actual); }
+:is(.panel,.role-card,.patient-tracking-entry) { border-color:var(--line); }
+.product-shell .panel { box-shadow:var(--shadow-panel); }
+:is(.primary-button,.solid) { box-shadow:var(--shadow-action); }
+.notification-item.unread { background:var(--surface-soft); border-left-color:var(--called-ink); }
+.notification-item time { color:var(--muted); font-size:var(--text-small); }
+:is(.tracking-qr,.patient-card .wait-comparison) { background:var(--surface); border-color:var(--line); border-radius:var(--radius-lg); }
+.wait-comparison { color:var(--muted); }
+
+/* Text and state symbols remain readable independently of colour. */
+.status,.risk-chip { --state-ink:var(--neutral-ink); --state-bg:var(--neutral-bg); --state-line:var(--neutral-line); display:inline-flex; align-items:center; gap:6px; padding:6px 10px; font-size:var(--text-small); line-height:1.4; font-weight:650; background:var(--state-bg); color:var(--state-ink); border:1px solid var(--state-line); border-radius:var(--radius-pill); text-transform:capitalize; white-space:nowrap; }
+.status::before { content:''; width:5px; height:5px; flex-shrink:0; border-radius:50%; background:currentColor; }
+.status:is(.waiting,.booked,.warning,.moderate,.break,.degraded),.risk-chip:is(.warning,.medium) { --state-ink:var(--waiting-ink); --state-bg:var(--waiting-bg); --state-line:var(--waiting-line); }
+.status:is(.called,.checked_in) { --state-ink:var(--called-ink); --state-bg:var(--called-bg); --state-line:var(--called-line); }
+.status:is(.in_service,.busy) { --state-ink:var(--service-ink); --state-bg:var(--service-bg); --state-line:var(--service-line); }
+.status:is(.completed,.available,.low,.healthy),.risk-chip:is(.normal,.low) { --state-ink:var(--completed-ink); --state-bg:var(--completed-bg); --state-line:var(--completed-line); }
+.status:is(.no_show,.high,.critical,.unavailable),.risk-chip:is(.high,.critical) { --state-ink:var(--missed-ink); --state-bg:var(--missed-bg); --state-line:var(--missed-line); }
+.risk-chip.closed,.status:is(.cancelled,.offline) { --state-ink:var(--neutral-ink); --state-bg:var(--neutral-bg); --state-line:var(--neutral-line); }
+button[data-intent="danger"],.token-actions .subtle { color:var(--missed-ink); border-color:var(--missed-line); background:var(--missed-bg); }
+button[data-intent="warning"] { color:var(--waiting-ink); border-color:var(--waiting-line); background:var(--waiting-bg); }
+.product-notice { background:var(--completed-bg); color:var(--completed-ink); border-color:var(--completed-line); }
+.product-error { background:var(--missed-bg); color:var(--missed-ink); border-color:var(--missed-line); }
+@media(hover:hover) { :is(.primary-button,.solid):hover:not(:disabled) { box-shadow:var(--shadow-hover); } }
+@media(max-width:480px) {
+ .product-shell .page-heading .section-label { font-size:var(--text-micro); }
+ .product-shell .page-heading .refresh-button { font-size:var(--text-small); }
+ .product-shell .page-heading { gap:var(--space-3); }
+ .journey-story .journey-label { font-size:var(--text-micro); }
+ .journey-patient .journey-label small { display:block; margin-left:0; }
+ .entry-header>span:last-child { display:none; }
+ .patient-token-id { letter-spacing:-.5px; }
+ .chart-legend { gap:var(--space-2); }
+ .chart-legend button { font-size:var(--text-small); }
+ .bar-row { grid-template-columns:minmax(0,1fr) minmax(60px,1fr) auto; gap:var(--space-2); }
+ .bar-row>span { width:auto; min-width:0; overflow-wrap:anywhere; }
+}
+
+/* Live metrics use the same semantic palette as their queue badges. */
+.product-shell:is(.view-live,.view-board) .metric-card { background:var(--metric-bg); border-color:var(--metric-line); color:var(--metric-ink); }
+.product-shell:is(.view-live,.view-board) .metric-card:nth-child(1) { --metric-ink:var(--waiting-ink); --metric-bg:var(--waiting-bg); --metric-line:var(--waiting-line); }
+.product-shell:is(.view-live,.view-board) .metric-card:nth-child(2) { --metric-ink:var(--called-ink); --metric-bg:var(--called-bg); --metric-line:var(--called-line); }
+.product-shell:is(.view-live,.view-board) .metric-card:nth-child(3) { --metric-ink:var(--service-ink); --metric-bg:var(--service-bg); --metric-line:var(--service-line); }
+.product-shell:is(.view-live,.view-board) .metric-card:nth-child(4) { --metric-ink:var(--completed-ink); --metric-bg:var(--completed-bg); --metric-line:var(--completed-line); }
+.product-shell:is(.view-live,.view-board) .metric-card:nth-child(5) { --metric-ink:var(--missed-ink); --metric-bg:var(--missed-bg); --metric-line:var(--missed-line); }
+.product-shell:is(.view-live,.view-board) .metric-card :is(strong,small,.metric-symbol),.product-shell:is(.view-live,.view-board) .metric-card>span { color:var(--metric-ink); }
+.product-shell:is(.view-live,.view-board) .metric-topline { margin-bottom:var(--space-2); }
+.product-shell:is(.view-live,.view-board) .metric-symbol { background:var(--surface); border-color:var(--metric-line); margin-bottom:0; }
+.product-shell:is(.view-live,.view-board) .metric-card strong { font-size:32px; }
+.filter-row .product-field>span { font-size:var(--text-label); }
+.product-shell:is(.view-live,.view-board) .kpi-grid .metric-card { min-height:116px; background:var(--metric-bg); border-color:var(--metric-line); }
+.product-shell:is(.view-live,.view-board) .kpi-grid .metric-card strong { font-size:32px; margin:var(--space-1) 0; color:var(--metric-ink); }
+.product-shell:is(.view-live,.view-board) .kpi-grid .metric-card>span,
+.product-shell:is(.view-live,.view-board) .kpi-grid .metric-card small { color:var(--metric-ink); }
+@media(min-width:1200px) {
+ .product-shell:is(.view-live,.view-board) .queue-toolbar { display:grid; grid-template-columns:minmax(140px,1fr) repeat(3,minmax(150px,1fr)) auto; }
+ .product-shell:is(.view-live,.view-board) .queue-toolbar>* { width:100%; min-width:0; }
+ .product-shell:is(.view-live,.view-board) .queue-toolbar .search-input { width:auto; }
+}
+:is(.product-table,.dataset-table) td { font-size:var(--text-body); color:var(--muted); }
+:is(.product-table,.dataset-table) td strong { color:var(--ink); }
+.view-live .product-table td:first-child strong { font-size:var(--text-body); color:var(--navy); background:var(--surface-soft); border-color:var(--line); }

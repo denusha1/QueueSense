@@ -1,4 +1,4 @@
-"""Explainable operational warnings and durable in-app automation; no external delivery."""
+"""Explainable operational warnings, in-app automation and opt-in delivery."""
 import asyncio
 import logging
 import math
@@ -107,7 +107,10 @@ async def lifespan(app):
     settings=app.state.automation_settings
     async def worker():
         while True:
-            try:await asyncio.to_thread(run_cycle,settings)
+            try:
+                await asyncio.to_thread(run_cycle,settings)
+                from backend.delivery import run_delivery
+                await asyncio.to_thread(run_delivery,settings)
             except Exception as exc:LOG.error('Automation cycle failed (%s).',type(exc).__name__)
             await asyncio.sleep(30)
     task=asyncio.create_task(worker()) if settings.automation_enabled else None

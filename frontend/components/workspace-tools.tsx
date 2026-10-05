@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowUpRight, Command, Expand, Minimize2, Search, SlidersHorizontal, X, TrendingUp, Clock3, Target } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 type Destination = readonly [string, string, LucideIcon];
-export function WorkspaceTools({ destinations, navigate, compact, setCompact, focus, setFocus }: {
+export function WorkspaceTools({ destinations, navigate, compact, setCompact, focus, setFocus, children }: {
  destinations: readonly Destination[]; navigate: (key: string) => void;
- compact: boolean; setCompact: (value: boolean) => void; focus: boolean; setFocus: (value: boolean) => void;
+ children?:ReactNode; compact: boolean; setCompact: (value: boolean) => void; focus: boolean; setFocus: (value: boolean) => void;
 }) {
  const dialog = useRef<HTMLDialogElement>(null);
  const input = useRef<HTMLInputElement>(null);
@@ -25,6 +25,7 @@ export function WorkspaceTools({ destinations, navigate, compact, setCompact, fo
  return <>
   <div className="workspace-tools" aria-label="Workspace tools">
    <button ref={trigger} className="command-trigger" onClick={open}><Search size={16}/><span>Jump to a workspace</span><kbd>⌘ / Ctrl K</kbd></button>
+   {children&&<div className="workspace-pref-slot">{children}</div>}
    <div className="display-controls"><button aria-label="Compact layout" aria-pressed={compact} onClick={() => setCompact(!compact)}><SlidersHorizontal size={16}/><span>Compact</span></button><button aria-label="Focus mode" aria-pressed={focus} onClick={() => setFocus(!focus)}>{focus ? <Minimize2 size={16}/> : <Expand size={16}/>}<span>{focus ? 'Exit focus' : 'Focus'}</span></button></div>
   </div>
   <dialog ref={dialog} className="command-dialog" aria-labelledby="command-title" onClick={event => { if (event.target === dialog.current) close(); }}>

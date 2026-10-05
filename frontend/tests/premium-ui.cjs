@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const base = 'http://127.0.0.1:3001';
+const base = process.env.BASE_URL || 'http://127.0.0.1:3002';
 const output = '/tmp/queuesense-premium';
 (async () => {
  fs.mkdirSync(output, { recursive: true });
@@ -43,7 +43,7 @@ const output = '/tmp/queuesense-premium';
   await page.locator('.metric-card').first().hover();
   await page.locator('.metric-card[data-illuminated=true]').waitFor();
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  assert.equal(await page.locator('.workspace-art svg').evaluate(el => getComputedStyle(el).animationName), 'none');
+  assert.equal(await page.locator('.workspace-flow').evaluate(el => getComputedStyle(el).animationName), 'none');
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.waitForFunction(() => window.scrollY === 0);
   await page.screenshot({ path: output + '/analytics.png', fullPage: true });
