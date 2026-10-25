@@ -12,6 +12,14 @@ The full workspace includes live queue, patient check-in/status, department queu
 
 Portfolio review materials: [walkthrough and screenshots](docs/PORTFOLIO.md), [architecture](docs/architecture/system.md), [security review](docs/SECURITY_REVIEW.md), [backup/restore runbook](docs/BACKUP_RESTORE.md), and [staff/student usability review plan](docs/USABILITY_REVIEW.md). Real participant feedback is pending; the usability review document includes a session guide and findings log.
 
+## Product tour
+
+![QueueSense animated tour](docs/demo/queuesense-tour.gif)
+
+| Live queue | Analytics | Model performance | Mobile |
+| --- | --- | --- | --- |
+| ![Live queue screenshot](docs/screenshots/live.png) | ![Analytics screenshot](docs/screenshots/analytics.png) | ![Prediction performance screenshot](docs/screenshots/models.png) | ![Mobile screenshot](docs/screenshots/mobile.png) |
+
 ## Premium interface
 
 The shared visual system now uses an ink-and-teal navigation shell, layered hero artwork, locally hosted DM Sans/Manrope typography, clearer metrics, responsive forms and tables, and consistent appointment, QR and patient screens. Chart legends let you show or hide a series while preserving at least one visible series. Charts also support arrow-key exploration.
@@ -119,6 +127,8 @@ Patient tracking explicitly shows people ahead, including called/in-service visi
 
 **Prediction performance** includes observed MAE, RMSE, signed bias, daily error trends, comparisons of observed/predicted waits and metrics by model version. Filter by arrival date and department. Monitoring uses one latest prediction recorded no later than service start per served visit; predictions after service begins are excluded. Positive bias indicates underestimation, negative bias indicates overestimation. Empty selections show unavailable metrics. Historical synthetic test evaluation remains separate from operational monitoring.
 
+Patient-facing predictions include local **TreeSHAP** explanations. The private token page shows the model baseline and the strongest input contributions, with positive values increasing and negative values decreasing the model output. Active-service capacity floors are called out separately. Rule-based capacity fallbacks are identified as such and do not receive SHAP claims. Explanations describe model behavior on synthetic data; they do not establish causation or guarantee a wait.
+
 **Audit log** records staff sign-in/sign-out, administrative actions, queue transitions, anonymous patient arrivals, feedback submission and exports. Transition details contain before/after status and clinician ID; exports record report type and filters. Patient comments, passwords and private links are excluded. Admin can filter by date, action/email/entity and exact entity ID, and page through 200 records at a time. The runtime database role can read/append audit records and cannot update/delete them. Queue events and audit records commit together.
 
 Existing installations must run `.venv/bin/python -m backend.bootstrap_product` to apply `008_audit_context.sql`, then rebuild and restart API/frontend. Browser verification: `BASE_URL=http://127.0.0.1:3002 node frontend/tests/operational.cjs` when using the review instance on port 3002.
@@ -159,5 +169,17 @@ Notifications persist in PostgreSQL with unique event keys and a transaction adv
 The live queue and private patient pages share priority-aware position calculations and live waiting estimates. Standard, unrestricted queues use batch inference from the existing trained Random Forest with current demand, time, clinician availability and historical service duration. Busy clinicians' remaining service prevents estimates promising immediate service before a clinician is free. Priority, service/language restrictions and continuity requirements use an explainable compatible-doctor workload calculation because those policies are outside the model's training features. Missing, failed or non-finite model outputs fall back to capacity estimates; no compatible clinician yields no estimate. Only today's active waiting visits affect order, and rank calculations use the full queue even when the staff list displays its 500-row limit.
 
 The initial check-in prediction, version and timestamp are retained separately from changing live estimates. When service begins, staff and patients can see the actual wait, initial prediction and signed error. **Prediction performance** refreshes on queue events and compares the latest recorded pre-service prediction (or the retained check-in snapshot, including operational fallbacks) against actual waiting time. Existing MAE/RMSE/bias trends and model-version comparisons remain available. The model is trained/evaluated on synthetic data; live estimates and synthetic evaluation scores do not establish real-clinic accuracy. Automatic notifications now use the same live prediction calculation as the patient page.
+
+## CI and load testing
+
+GitHub Actions runs generator tests, PostgreSQL-backed backend tests, frontend TypeScript checks and a production build on every push and pull request. See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+An optional Locust scenario exercises the API health and private patient-status endpoints with 100 virtual users. Each user waits 12–18 seconds between requests, approximating periodic status refresh and staying within the API's process-wide 600 token reads/minute guardrail. The local run sent 1,203 requests with zero failures; setup and limits are in the [load-test report](docs/LOAD_TEST.md). Against the local synthetic database, run:
+
+```sh
+.venv/bin/python scripts/run_local_loadtest.py
+```
+
+Load-test outcomes depend on the host, database, fixture and request mix; a local run does not prove production capacity. Never run load tests against a clinic or other production service without authorization.
 
 Apply `011_checkin_predictions.sql` with `.venv/bin/python -m backend.bootstrap_product`, then rebuild/restart. Browser verification: `BASE_URL=http://127.0.0.1:3002 node frontend/tests/core-queue.cjs`. Private tracking QR endpoint: `/patient/{key}/qr?origin=<configured-clinic-origin>`; QR responses are not cached.

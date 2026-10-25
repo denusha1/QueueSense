@@ -11,12 +11,53 @@ from fastapi import HTTPException
 ROOT=Path(__file__).resolve().parents[2]
 LOG=logging.getLogger('queuesense.prediction')
 BASELINE='operational-baseline'
+FEATURE_LABELS={
+    'queue_ahead':'Patients ahead',
+    'active_staff':'Available clinicians',
+    'recent_service':'Recent service duration',
+    'arrivals_30m':'Arrivals in last 30 minutes',
+    'hour':'Time of day',
+    'weekday':'Day of week',
+}
 
 
 @lru_cache(maxsize=1)
 def artifact():
     path=ROOT/'ml/artifacts/wait_model.joblib'
     return joblib.load(path) if path.exists() else None
+
+
+@lru_cache(maxsize=2)
+def tree_explainer(version):
+    import shap
+    stored=artifact()
+    if not stored or stored.get('version')!=version:return None
+    return shap.TreeExplainer(stored['model'].steps[-1][1])
+
+
+def explain_prediction(stored,features,prediction,floor=0):
+    """Return local TreeSHAP attributions for an unadjusted tree-model output."""
+    model=stored['model'];vectorizer=model.steps[0][1]
+    matrix=model[:-1].transform([features])
+    values=tree_explainer(stored['version']).shap_values(matrix)
+    contributions=values[0] if getattr(values,'ndim',1)>1 else values
+    labels=vectorizer.get_feature_names_out()
+    rows=[]
+    for name,value in zip(labels,contributions):
+        feature=str(name)
+        if feature.startswith('department='):
+            label='Department';input_value='selected department'
+        else:
+            label=FEATURE_LABELS.get(feature,feature.replace('_',' ').title())
+            input_value=features.get(feature)
+            if feature=='weekday' and isinstance(input_value,int):input_value=('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')[input_value]
+            if feature=='hour' and isinstance(input_value,int):input_value=f'{input_value:02d}:00'
+        amount=float(value)
+        rows.append(dict(feature=label,input=input_value,impact=round(amount,2),direction='increases' if amount>0 else 'decreases' if amount<0 else 'no change'))
+    rows.sort(key=lambda item:abs(item['impact']),reverse=True)
+    expected=tree_explainer(stored['version']).expected_value
+    base=float(expected[0] if getattr(expected,'__len__',None) and not isinstance(expected,str) else expected)
+    return dict(method='TreeSHAP',baseline=round(base,2),model_output=round(float(prediction),2),capacity_floor=round(float(floor),2),contributions=rows,note='Positive impacts increase the estimate; negative impacts reduce it. Attributions sum to the model output before the active-service minimum is applied.')
 
 
 def live_predictions(conn,department_id,at=None,prospective=None):
@@ -56,10 +97,14 @@ def live_predictions(conn,department_id,at=None,prospective=None):
             if stored and stored.get('model') is not None:
                 values=stored['model'].predict(features)
                 if len(values)!=len(targets) or any(not math.isfinite(float(v)) for v in values):raise ValueError('Invalid model output')
-                for (key,baseline),value in zip(targets,values):
+                for ((key,baseline),value),row in zip(zip(targets,values),features):
                     # Do not predict service before the earliest clinician finishes an active visit.
                     floor=min((max(1,minutes-max(0,(now-d['service_start_at']).total_seconds()/60)) if d['service_start_at'] else minutes if d['called_at'] else 0 for d in doctors),default=0)
-                    results[key].update(minutes=round(max(0,float(value),floor),1),model_version=stored['version'],source='ai',reason='AI estimate from synthetic historical operations and current queue conditions. Not a guarantee.')
+                    try:explanation=explain_prediction(stored,row,float(value),floor)
+                    except Exception as exc:
+                        LOG.warning('SHAP explanation unavailable (%s); model estimate retained.',type(exc).__name__)
+                        explanation=None
+                    results[key].update(minutes=round(max(0,float(value),floor),1),model_version=stored['version'],source='ai',reason='AI estimate from synthetic historical operations and current queue conditions. Not a guarantee.',explanation=explanation)
         except Exception as exc:
             LOG.warning('Live inference unavailable (%s); operational estimates used.',type(exc).__name__)
     return results

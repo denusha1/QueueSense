@@ -6,6 +6,7 @@ httpx>=0.28,<1
 pytest>=8,<10
 pandas>=2.2,<3
 scikit-learn>=1.6,<2
+shap>=0.54,<0.55
 reportlab>=4.3,<5
 cryptography>=44,<47
 pywebpush>=2,<3

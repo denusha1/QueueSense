@@ -40,6 +40,10 @@
 .patient-estimate-details h3 { margin:0 0 var(--space-2); font-size:14px; color:var(--navy); }
 .patient-card .patient-estimate-details p { font-size:12px; line-height:1.7; color:var(--muted); margin:var(--space-2) 0 0; }
 .patient-card .patient-estimate-details .estimate-change { color:var(--waiting-ink); }
+.patient-estimate-details .prediction-explanation { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; text-align:left; }
+.prediction-explanation summary { cursor:pointer; color:var(--navy); font-size:13px; font-weight:700; }
+.patient-card .prediction-explanation p,.patient-card .prediction-explanation li { font-size:12px; line-height:1.65; color:var(--muted); }
+.prediction-explanation ul { padding-left:20px; margin:8px 0; }
 @media(max-width:600px) {
  .workspace-preferences summary>span,.reception-desk summary>span { display:none; }
  .desk-actions>* { width:100%; }

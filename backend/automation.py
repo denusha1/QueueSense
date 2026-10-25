@@ -105,6 +105,11 @@ def run_cycle(settings,now=None):
 @asynccontextmanager
 async def lifespan(app):
     settings=app.state.automation_settings
+    try:
+        from backend.services.prediction import artifact,tree_explainer
+        stored=artifact()
+        if stored:await asyncio.to_thread(tree_explainer,stored['version'])
+    except Exception as exc:LOG.warning('SHAP explainer warmup unavailable (%s); estimates remain available.',type(exc).__name__)
     async def worker():
         while True:
             try:

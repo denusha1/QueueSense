@@ -44,10 +44,13 @@ pywebpush==2.3.0
 reportlab==4.5.1
 requests==2.34.2
 scikit-learn==1.9.1
+shap==0.54.1
 scipy==1.18.1
+slicer==0.0.8
 six==1.17.0
 starlette==1.6.0
 threadpoolctl==3.6.0
+tqdm==4.70.1
 typing-inspection==0.4.4
 typing_extensions==4.16.0
 tzdata==2026.4
