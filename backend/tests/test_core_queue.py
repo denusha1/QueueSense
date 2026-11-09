@@ -29,6 +29,19 @@ def test_priority_call_order_positions_and_authorization(client,clinic,test_url)
     assert post(client,'/queue/check-in',{'department_id':dep['id'],'priority_class':'expedited','priority_reason':'Policy P1'}).status_code==403
 
 
+def test_private_links_are_not_in_queue_payloads_and_require_reception_or_admin(client,clinic):
+    dep,doctor=clinic
+    token=post(client,'/queue/check-in',{'department_id':dep['id']}).json()
+    for payload in [client.get('/queue/live').json()['tokens'],client.get('/queue/page').json()['rows']]:
+        assert payload and all('public_key' not in row for row in payload)
+    assert client.get(f"/queue/{token['id']}/private-link").json()=={'public_key':token['public_key']}
+    assert patch(client,f"/queue/{token['id']}/status",{'status':'cancelled'}).json().get('public_key') is None
+    login(client,'manager')
+    assert client.get(f"/queue/{token['id']}/private-link").status_code==403
+    login(client,'doctor')
+    assert client.get(f"/queue/{token['id']}/private-link").status_code==403
+
+
 def test_private_tracking_qr_and_public_checkin_cannot_choose_priority(client,clinic):
     dep,doctor=clinic
     token=post(client,'/queue/check-in',{'department_id':dep['id']}).json()

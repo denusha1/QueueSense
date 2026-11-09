@@ -58,6 +58,8 @@ Validation: `.venv/bin/python -m backend.verify_local` and, with the app running
 
 The native PostgreSQL cluster runs privately on port 55432 with random credentials stored only under ignored `.local/`. The API runs on 8001 and frontend on 3001. Restart API/frontend after code or model changes.
 
+The frontend listens on all network interfaces for same-network device testing; `scripts/start_local.py` prints the current LAN URL and allows only that exact frontend origin for browser requests. Other devices must be on the same trusted Wi-Fi/LAN, and macOS Firewall must allow incoming connections. The API and database remain bound to loopback. Restart the launcher after changing networks so the allowed LAN address is refreshed. This is LAN access, not public internet hosting.
+
 ## Fresh local setup
 
 ```sh

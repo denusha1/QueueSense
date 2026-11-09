@@ -29,7 +29,7 @@ def attach_table_pages(app,settings,current_user):
         base="s.service_date=(now() AT TIME ZONE d.timezone)::date AND (%s::uuid IS NULL OR d.id=%s)"
         where=base+" AND (%s='all' OR t.status=%s) AND (d.code||'-'||lpad(t.token_no::text,greatest(3,length(t.token_no::text)),'0') ILIKE %s OR d.name ILIKE %s)"
         args=(department,department,status,status,pattern(search),pattern(search))
-        fields='SELECT t.id,t.department_id,t.staff_id,t.token_no,t.status,t.priority_class,t.priority_reason,t.initial_wait_minutes,t.initial_prediction_version,t.check_in_at,t.called_at,t.service_start_at,t.completed_at,t.public_key,d.code,d.name AS department,st.display_name AS clinician'
+        fields='SELECT t.id,t.department_id,t.staff_id,t.token_no,t.status,t.priority_class,t.priority_reason,t.initial_wait_minutes,t.initial_prediction_version,t.check_in_at,t.called_at,t.service_start_at,t.completed_at,d.code,d.name AS department,st.display_name AS clinician'
         order="CASE t.priority_class WHEN 'expedited' THEN 0 ELSE 1 END,t.check_in_at,t.token_no,t.id" if sort!='token' else 'd.code,t.token_no,t.id'
         with connection(settings) as conn:
             total=conn.execute('SELECT count(*) AS n'+joins+' WHERE '+where,args).fetchone()['n'];page=min(page,max(1,(total+page_size-1)//page_size))

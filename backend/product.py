@@ -133,7 +133,7 @@ def active_staff(conn,department_id):
 
 
 def queue_snapshot(conn,department=None):
-    query = """SELECT t.id,t.department_id,t.staff_id,t.token_no,t.status,t.priority_class,t.priority_reason,t.initial_wait_minutes,t.initial_prediction_version,t.check_in_at,t.called_at,t.service_start_at,t.completed_at,t.public_key,d.code,d.name AS department,st.display_name AS clinician
+    query = """SELECT t.id,t.department_id,t.staff_id,t.token_no,t.status,t.priority_class,t.priority_reason,t.initial_wait_minutes,t.initial_prediction_version,t.check_in_at,t.called_at,t.service_start_at,t.completed_at,d.code,d.name AS department,st.display_name AS clinician
 FROM queue_tokens t JOIN queue_sessions s ON s.id=t.session_id JOIN departments d ON d.id=t.department_id LEFT JOIN staff st ON st.id=t.staff_id
 WHERE s.service_date=(now() AT TIME ZONE d.timezone)::date AND (%s::uuid IS NULL OR d.id=%s) ORDER BY CASE t.priority_class WHEN 'expedited' THEN 0 ELSE 1 END,t.check_in_at,t.token_no LIMIT 500"""
     rows=conn.execute(query,(department,department)).fetchall()
@@ -203,6 +203,14 @@ def attach_product(app,settings,current_user):
         with connection(settings) as conn:
             return issue_token(conn,body.department_id,user,body.model_dump())
 
+    @app.get('/queue/{token_id}/private-link')
+    def private_link(token_id:uuid.UUID,user=Depends(current_user)):
+        require(user,('admin','reception'))
+        with connection(settings) as conn:
+            row=conn.execute('SELECT public_key FROM queue_tokens WHERE id=%s',(token_id,)).fetchone()
+            if not row:raise HTTPException(404,'Token not found.')
+            return {'public_key':row['public_key']}
+
     def transition(conn,token_id,body,user):
         conn.execute('SELECT pg_advisory_xact_lock(72419023)')
         token=conn.execute('SELECT * FROM queue_tokens WHERE id=%s FOR UPDATE',(token_id,)).fetchone()
@@ -231,7 +239,7 @@ def attach_product(app,settings,current_user):
         if staff_id and body.status in ('called','completed','cancelled','no_show'):
             conn.execute('INSERT INTO staff_availability(staff_id,status,changed_at) VALUES(%s,%s,%s)',(staff_id,'busy' if body.status=='called' else 'available',now))
         audit(conn,user,body.status,'queue_token',token_id,{'from_status':token['status'],'to_status':body.status,'staff_id':str(staff_id) if staff_id else None})
-        return row
+        return {key:value for key,value in row.items() if key!='public_key'}
 
     @app.patch('/queue/{token_id}/status')
     def change(token_id:uuid.UUID,body:Change,user=Depends(current_user)):
