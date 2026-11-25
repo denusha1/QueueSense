@@ -81,14 +81,14 @@ def test_health_checks_and_security_headers(client,clinic,monkeypatch):
 
 def test_wait_rating_relationship_uses_measured_visit_wait(client, clinic, monkeypatch):
     from datetime import timedelta
-    import backend.product as product
+    from backend.services import queue
     dep, staff = clinic
     clock = [datetime.now(ZoneInfo('Asia/Colombo')).replace(hour=9,minute=0,second=0,microsecond=0)]
     class Clock(datetime):
         @classmethod
         def now(cls, tz=None):
             return clock[0].astimezone(tz) if tz else clock[0].replace(tzinfo=None)
-    monkeypatch.setattr(product,'datetime',Clock)
+    monkeypatch.setattr(queue,'datetime',Clock)
     for minutes, rating in [(5,5),(20,3),(35,1)]:
         token=post(client,'/queue/check-in',{'department_id':dep['id']}).json()
         clock[0]+=timedelta(minutes=minutes)

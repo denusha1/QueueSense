@@ -3,7 +3,8 @@ import argparse
 import getpass
 import os
 import psycopg
-from backend.app import Credentials, HASHER, WORKSPACES
+from backend.core.security import HASHER
+from backend.schemas.auth import Credentials, WORKSPACES
 
 
 def main():

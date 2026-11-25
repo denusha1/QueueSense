@@ -20,9 +20,18 @@ def main():
     if empty:
         subprocess.run([python, 'database/scripts/manage.py', 'seed'], cwd=ROOT, env=env, check=True)
     with psycopg.connect(owner_url) as conn:
-        conn.execute((ROOT / 'database/tests/integrity.sql').read_text())
+        for test in ('integrity.sql', 'identity_integrity.sql'):
+            conn.execute((ROOT / 'database/tests' / test).read_text())
         conn.rollback()
-    for statement in ['DELETE FROM users WHERE false', 'DELETE FROM audit_logs WHERE false', 'UPDATE audit_logs SET action=action WHERE false', 'CREATE TABLE public.forbidden_probe(id integer)']:
+    for statement in [
+        'DELETE FROM users WHERE false',
+        'DELETE FROM audit_logs WHERE false',
+        'UPDATE audit_logs SET action=action WHERE false',
+        'UPDATE patients SET created_at=created_at WHERE false',
+        'DELETE FROM patients WHERE false',
+        'DELETE FROM role_permissions WHERE false',
+        'CREATE TABLE public.forbidden_probe(id integer)',
+    ]:
         with psycopg.connect(runtime_url) as conn:
             try:
                 conn.execute(statement)

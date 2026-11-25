@@ -11,3 +11,6 @@ GRANT SELECT,INSERT,UPDATE ON notifications,automation_state TO queuesense_auth;
 GRANT SELECT,INSERT ON notification_reads TO queuesense_auth;
 GRANT UPDATE(display_name,preferred_language) ON users TO queuesense_auth;
 GRANT SELECT,INSERT,UPDATE,DELETE ON account_mfa,account_recovery,security_attempts,notification_targets,notification_deliveries TO queuesense_auth;
+-- Only clinic identifiers can be corrected. The runtime cannot delete identities or edit role policy.
+GRANT SELECT(id,external_id), INSERT(external_id,created_by), UPDATE(external_id) ON patients TO queuesense_auth;
+GRANT SELECT ON roles,permissions,role_permissions TO queuesense_auth;

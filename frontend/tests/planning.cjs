@@ -48,10 +48,10 @@ const base=process.env.BASE_URL||'http://127.0.0.1:3002';
   const baseline=Number(forecastSummary.match(/(\d+) doctors currently on duty/)[1]);
   await page.getByRole('button',{name:'Simulate this period'}).first().click();
   await page.waitForFunction(value=>document.querySelector('input[name=baseline_staff]')?.value===String(value),baseline);
-  await page.getByRole('button',{name:'Compare scenarios'}).click();
+  await page.getByRole('button',{name:'Run scenario',exact:true}).click();
   await page.getByRole('heading',{name:'Proposed staffing · '+Math.min(100,baseline+1)+' doctors',exact:true}).waitFor();
   await page.getByRole('button',{name:'Remove one doctor'}).click();
-  await page.getByRole('button',{name:'Compare scenarios'}).click();
+  await page.getByRole('button',{name:'Run scenario',exact:true}).click();
   await page.getByRole('heading',{name:'Proposed staffing · '+Math.max(0,baseline-1)+' doctors',exact:true}).waitFor();
   for(const width of [375,768]){
    await page.setViewportSize({width,height:1000});

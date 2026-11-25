@@ -35,6 +35,10 @@ python3 data/generator/generate.py
 
 The CLI reads environment variables; it does not auto-load `.env`. Do not paste real credentials into logs or source code. Schema migration tracking uses checksums and a transaction lock. A failed migration/seed rolls back and the CLI exits nonzero.
 
+For migrations 013 and 014, confirm PostgreSQL provides `btree_gist`, run the
+preflight checks, and reapply the product runtime grants after migrating. See
+[database design and upgrade workflow](../docs/DATABASE_DESIGN.md).
+
 ## Reproducible SQL verification without Docker
 
 ```sh
@@ -44,8 +48,10 @@ npm ci --prefix database
 npm test --prefix database
 ```
 
-The database test dependency runs **embedded PostgreSQL via PGlite**; it is test tooling only, not the application database. Tests apply every migration, insert the full generated dataset, reconcile counts and SQL/Python waits, validate a full queue lifecycle, reject 11 invalid writes and verify rollback. This does not verify Docker, host networking, the native psycopg CLI, least-privilege runtime roles, or production Postgres deployment.
+The database test dependency runs embedded PostgreSQL via PGlite. The test
+loads legacy rows before migration 013, verifies they survive the upgrade,
+checks seed counts and wait KPIs, and rolls back integrity probes. Run
+`.venv/bin/python -m backend.verify_local` to exercise the native PostgreSQL
+migration CLI, permissions, and concurrent application traffic.
 
-Validated in this workspace: Python 3.9.6, Node 25.6.1, PGlite 0.5.8. Step 3 subsequently installed portable native PostgreSQL 17.10, ran the migration and seed CLI, re-ran migrations safely and passed the same integrity SQL. Docker remains unavailable and Compose is unexecuted. The Docker helper uses Python 3.12 and PostgreSQL 17; smoke-test that path after installing Docker.
-
-See [data dictionary](../data/data_dictionary.md) and [ER diagram](../docs/architecture/database.md).
+[Data dictionary](../data/data_dictionary.md) · [Current ER diagram](../docs/DATABASE_DESIGN.md#entity-relationships)

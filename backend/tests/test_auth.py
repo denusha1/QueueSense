@@ -36,7 +36,7 @@ def test_url():
 @pytest.fixture
 def client(test_url):
     with psycopg.connect(test_url) as conn:
-        conn.execute('TRUNCATE users, auth_sessions, login_attempts, departments, audit_logs, model_runs, automation_state CASCADE')
+        conn.execute('TRUNCATE users, auth_sessions, login_attempts, departments, audit_logs, model_runs, automation_state, patients CASCADE')
         password_hash = HASHER.hash(PASSWORD)
         for role in ('reception', 'doctor', 'manager', 'admin'):
             for domain in ('staff.example.test', 'demo.queuesense.test'):
@@ -83,7 +83,9 @@ def test_wrong_password_unknown_account_and_role_tampering(client):
     wrong = login(client, password='wrong')
     unknown = login(client, email='unknown@staff.example.test')
     assert wrong.status_code == unknown.status_code == 401
-    assert wrong.json() == unknown.json()
+    assert wrong.json()['error'] == unknown.json()['error']
+    assert wrong.json()['detail'] == unknown.json()['detail']
+    assert wrong.json()['request_id'] != unknown.json()['request_id']
     denied = client.post('/auth/login', json={'email': 'reception@staff.example.test', 'password': PASSWORD, 'role': 'admin'}, headers={'Origin': ORIGIN})
     assert denied.status_code == 403 and COOKIE not in client.cookies
     assert client.get('/auth/workspace/admin').status_code == 401

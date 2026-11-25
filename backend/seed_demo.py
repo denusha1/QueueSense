@@ -2,7 +2,8 @@
 import os
 import secrets
 import psycopg
-from backend.app import HASHER, WORKSPACES
+from backend.core.security import HASHER
+from backend.schemas.auth import WORKSPACES
 
 
 def main():

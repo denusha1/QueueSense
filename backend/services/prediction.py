@@ -6,7 +6,8 @@ from datetime import datetime
 from pathlib import Path
 import joblib
 from zoneinfo import ZoneInfo
-from fastapi import HTTPException
+from backend.core.errors import ServiceError
+from backend.core.logging import log_event
 
 ROOT=Path(__file__).resolve().parents[2]
 LOG=logging.getLogger('queuesense.prediction')
@@ -62,9 +63,9 @@ def explain_prediction(stored,features,prediction,floor=0):
 
 def live_predictions(conn,department_id,at=None,prospective=None):
     from backend.planning import roster,eligible
-    from backend.product import service_estimate
+    from backend.services.clinic import service_estimate
     dep=conn.execute('SELECT * FROM departments WHERE id=%s AND is_active',(department_id,)).fetchone()
-    if not dep:raise HTTPException(404,'Department not found.')
+    if not dep:raise ServiceError(404,'Department not found.')
     now=(at or datetime.now(ZoneInfo(dep['timezone']))).astimezone(ZoneInfo(dep['timezone']))
     tokens=conn.execute("""SELECT t.* FROM queue_tokens t JOIN queue_sessions s ON s.id=t.session_id
       WHERE t.department_id=%s AND t.status='waiting' AND s.service_date=%s AND t.check_in_at<=%s
@@ -102,11 +103,11 @@ def live_predictions(conn,department_id,at=None,prospective=None):
                     floor=min((max(1,minutes-max(0,(now-d['service_start_at']).total_seconds()/60)) if d['service_start_at'] else minutes if d['called_at'] else 0 for d in doctors),default=0)
                     try:explanation=explain_prediction(stored,row,float(value),floor)
                     except Exception as exc:
-                        LOG.warning('SHAP explanation unavailable (%s); model estimate retained.',type(exc).__name__)
+                        log_event(LOG, logging.WARNING, 'model_explanation_unavailable', error_type=type(exc).__name__)
                         explanation=None
                     results[key].update(minutes=round(max(0,float(value),floor),1),model_version=stored['version'],source='ai',reason='AI estimate from synthetic historical operations and current queue conditions. Not a guarantee.',explanation=explanation)
         except Exception as exc:
-            LOG.warning('Live inference unavailable (%s); operational estimates used.',type(exc).__name__)
+            log_event(LOG, logging.WARNING, 'model_inference_fallback', error_type=type(exc).__name__)
     return results
 
 

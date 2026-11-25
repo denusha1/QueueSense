@@ -80,7 +80,9 @@ const base = 'http://127.0.0.1:3001';
   await visitor.getByRole('button', { name: 'I have arrived', exact: false }).click();
   await visitor.getByRole('link', { name: 'View my token', exact: false }).waitFor();
   assert.equal(await visitor.getByRole('link', { name: 'View my token', exact: false }).getAttribute('href'), walkinPatient);
-  await page.locator('.config-row').filter({ hasText: dep.name }).getByRole('button', { name: 'Revoke QR' }).click();
+  const kiosk = page.locator('.config-row').filter({ hasText: dep.name });
+  await kiosk.getByRole('button', { name: 'Revoke QR' }).click();
+  await kiosk.waitFor({ state: 'detached' });
   await visitor.reload();
   await visitor.getByRole('alert').filter({ hasText: 'expired' }).waitFor();
   // Close the remaining synthetic walk-in to avoid leaving active verification tokens.

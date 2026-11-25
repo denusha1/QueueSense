@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, LongTable, TableStyle
 from backend.services.metrics import analytics, BASE, WAIT, SERVICE, filters
-from fastapi import HTTPException
+from backend.core.errors import ServiceError
 
 
 def sections(conn,start,end,kind,department=None,staff=None,weekday=None,hour_from=0,hour_to=23):
@@ -18,7 +18,7 @@ def sections(conn,start,end,kind,department=None,staff=None,weekday=None,hour_fr
     if kind=='visits':
         where,values=filters(*args)
         rows=conn.execute(f'SELECT d.code AS department,st.display_name AS doctor,t.token_no AS token,t.status,t.check_in_at,t.service_start_at,t.completed_at,{WAIT} AS waiting_minutes,{SERVICE} AS service_minutes'+BASE+where+' ORDER BY t.check_in_at LIMIT 50001',values).fetchall()
-        if len(rows)>50000:raise HTTPException(422,'Export exceeds 50,000 rows. Narrow the date range.')
+        if len(rows)>50000:raise ServiceError(422,'Export exceeds 50,000 rows. Narrow the date range.')
         return [table('Visit details',[('department','Department'),('doctor','Doctor'),('token','Token'),('status','Status'),('check_in_at','Check-in'),('service_start_at','Service start'),('completed_at','Completed'),('waiting_minutes','Wait min'),('service_minutes','Service min')],rows)]
     daily=[('date','Day'),('arrivals','Arrivals'),('completed','Completed'),('average_wait','Mean wait'),('p90_wait','P90 wait')]
     dept=[('name','Department'),('arrivals','Arrivals'),('completed','Completed'),('average_wait','Mean wait'),('p90_wait','P90 wait')]
