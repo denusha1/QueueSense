@@ -1,19 +1,21 @@
 # QueueSense Choreo integration plan
 
+Stage 10 preparation record. For the implemented partner origin and current console steps, see the [Stage 11 gateway design](gateway-design.md) and [proxy configuration](proxy-configuration.md).
+
 Reviewed against official WSO2 Developer Platform documentation on 26 November 2026. This plan uses the managed console at `console.choreo.dev`. It prepares an origin image and a contract for private review. Hosted deployment, proxy activation, publication and subscriptions require the owner’s console access and approval. [Official platform documentation](https://wso2.com/engineering-platform/developer-platform/docs/) · [Managed console](https://console.choreo.dev/)
 
 ## Repository work completed
 
 - The [backend Dockerfile](../backend/Dockerfile) installs the locked Python dependencies, copies the application and model, and starts `backend.app:create_app` on `0.0.0.0:8001`. It now declares numeric UID `10001`, in the range required by the Docker workflow. Uvicorn disables direct access logs and proxy-header trust. [Official Docker service workflow](https://wso2.com/engineering-platform/developer-platform/docs/develop-components/develop-services/develop-a-service-with-docker/)
-- The [OpenAPI 3.0.3 file](openapi.yaml) is generated from the current FastAPI contract and contains one GET operation. It deliberately has a relative origin path and no guessed gateway host. It describes the existing staff JWT, parameter constraints and origin errors. The production application hides its complete generated schema. [Exposure rules](api-exposure.md) · [Authentication plan](security-integration.md)
+- The [OpenAPI 3.0.3 file](staff-preview.openapi.yaml) is generated from the current FastAPI contract and contains one GET operation. It deliberately has a relative origin path and no guessed gateway host. It describes the existing staff JWT, parameter constraints and origin errors. The production application hides its complete generated schema. [Exposure rules](api-exposure.md) · [Authentication plan](security-integration.md)
 - PostgreSQL migrations and runtime grants stay separate from the API process. The readiness endpoint exercises database access for the runtime role. Apply migrations through `017_staff_authorization.sql` using the release/owner credential before first startup. [Migration runner](../database/scripts/manage.py) · [Runtime grants](../database/sql/product_runtime_grants.sql)
 
 To regenerate or check contract drift, use the backend's locked virtual environment with PyYAML available. PyYAML and `openapi-spec-validator` are tooling only. Install them in a verification environment alongside the backend lock. Run from the repository root.
 
 ```sh
-PYTHONPATH=. python api-management/generate_openapi.py
-PYTHONPATH=. python api-management/generate_openapi.py --check
-python -m openapi_spec_validator api-management/openapi.yaml
+PYTHONPATH=. python api-management/generate_openapi.py --staff-preview
+PYTHONPATH=. python api-management/generate_openapi.py --staff-preview --check
+python -m openapi_spec_validator api-management/staff-preview.openapi.yaml
 docker build -f backend/Dockerfile -t queuesense-api:local .
 ```
 
@@ -29,7 +31,7 @@ docker build -f backend/Dockerfile -t queuesense-api:local .
 
 The checked-in contract can be reviewed in the import form with a confirmed synthetic origin. Keep it in **Created** during this stage. A managed partner invocation requires the separate integration endpoint, gateway-assertion verification, and department and cohort controls in the [security plan](security-integration.md). Deploy the proxy for traffic only after those controls and its revised contract are available.
 
-1. In the project choose **+ Create → API Proxy → Upload API Specification**. Upload `api-management/openapi.yaml` for private import review. Then set the metadata. Preview display name can be `QueueSense Waiting Time Private Preview`, unique component name `queuesense-wait-time-preview`, context `queuesense-wait-time-preview`, and API version `v1.0`. Set **Target** to the verified synthetic ingress URL with the `/api/v1/analytics` suffix. For the future partner component, upload its revised contract and use its approved integration ingress and base path. Confirm **Develop → Resources** lists exactly the intended GET operation. [Official contract upload workflow](https://wso2.com/engineering-platform/developer-platform/docs/develop-components/develop-proxy/develop-an-api-proxy-from-an-open-api-specification/)
+1. In the project choose **+ Create → API Proxy → Upload API Specification**. Upload `api-management/staff-preview.openapi.yaml` for private import review. Then set the metadata. Preview display name can be `QueueSense Waiting Time Private Preview`, unique component name `queuesense-wait-time-preview`, context `queuesense-wait-time-preview`, and API version `v1.0`. Set **Target** to the verified synthetic ingress URL with the `/api/v1/analytics` suffix. For the future partner component, upload its revised contract and use its approved integration ingress and base path. Confirm **Develop → Resources** lists exactly the intended GET operation. [Official contract upload workflow](https://wso2.com/engineering-platform/developer-platform/docs/develop-components/develop-proxy/develop-an-api-proxy-from-an-open-api-specification/)
 2. After origin security and approval, use **Deploy → Build Area → Security Settings** to keep OAuth2 enabled and enable the signed backend assertion. Configure the endpoint certificate and mTLS. Use **Deploy → Build Area → Configure & Deploy** for Development. Select the access mode required by the approved audience. **External** exposes a public gateway endpoint and requires approval. Review the actual Target during deploy. [Official deployment workflow](https://wso2.com/engineering-platform/developer-platform/docs/tutorials/expose-a-service-as-a-managed-api/) · [Security runbook](security-integration.md)
 3. In **Test → OpenAPI Console**, select Development, choose the GET resource and run a synthetic request. Separately test with a machine-client token through the gateway before promoting. Verify the exact origin path, authorization and excluded routes. Configure tested API limits on the environment's **CORS, Rate Limiting and Resiliency** panel. Document the gateway's actual rejection responses separately from FastAPI's envelope. [Official testing and rate limiting workflow](https://wso2.com/engineering-platform/developer-platform/docs/develop-components/develop-proxy/develop-an-api-proxy-from-an-open-api-specification/)
 

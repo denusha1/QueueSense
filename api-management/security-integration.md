@@ -1,5 +1,7 @@
 # QueueSense and Choreo authentication
 
+Stage 10 preparation record. For the implemented partner origin and current console steps, see the [Stage 11 gateway design](gateway-design.md) and [proxy configuration](proxy-configuration.md).
+
 ## Trust boundaries
 
 | Hop | Credential and enforcement |
@@ -9,7 +11,7 @@
 | Choreo to integration ingress | TLS with gateway client certificate verification. Apply a strict method and path allowlist at the ingress. |
 | Gateway to Future QueueSense integration route | Verify Choreo's signed `X-JWT-Assertion` against a configured gateway JWKS and dedicated audience. Resolve local client and clinic grants before running any aggregate query. |
 
-Only the first row is implemented in QueueSense today. The [checked-in preview](openapi.yaml) declares staff bearer authentication, so a successful Choreo client-credentials token alone cannot invoke the current analytics route. The proxy should keep OAuth enabled. Finish the partner-specific verifier, grant checks and data filtering before using the pilot with partner credentials. Keep QueueSense's staff signing secret and refresh cookies within the existing QueueSense trust boundary. [QueueSense JWT configuration](../docs/JWT_AUTHENTICATION.md) · [Official OAuth consumption guide](https://choreolabs.com/engineering-platform/developer-platform/docs/tutorials/consume-an-api-hosted-in-choreo/)
+Only the first row is implemented in QueueSense today. The [checked-in preview](staff-preview.openapi.yaml) declares staff bearer authentication, so a successful Choreo client-credentials token alone cannot invoke the current analytics route. The proxy should keep OAuth enabled. Finish the partner-specific verifier, grant checks and data filtering before using the pilot with partner credentials. Keep QueueSense's staff signing secret and refresh cookies within the existing QueueSense trust boundary. [QueueSense JWT configuration](../docs/JWT_AUTHENTICATION.md) · [Official OAuth consumption guide](https://choreolabs.com/engineering-platform/developer-platform/docs/tutorials/consume-an-api-hosted-in-choreo/)
 
 ## Console and origin steps after approval
 

@@ -2,10 +2,12 @@
 
 from fastapi import FastAPI
 
+from backend.api.choreo import router as choreo_router
 from backend.api.errors import register_exception_handlers
 from backend.api.middleware import headers_and_origin
 from backend.api.router import router
 from backend.automation import lifespan
+from backend.core.choreo import ChoreoVerifier
 from backend.core.config import Settings as Settings
 from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.security import COOKIE as COOKIE
@@ -29,4 +31,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.middleware('http')(headers_and_origin)
     register_exception_handlers(app)
     app.include_router(router)
+    if settings.choreo:
+        app.state.choreo_verifier = ChoreoVerifier(settings.choreo)
+        app.include_router(choreo_router)
     return app

@@ -2,9 +2,10 @@
 
 import uuid
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Response
 
 from backend.api.dependencies import AppSettings, CurrentUser
+from backend.api.traffic import PUBLIC_LINK_TRAFFIC
 from backend.schemas.legacy_responses import PatientStatus, QueueLive
 from backend.schemas.product import (
     Availability,
@@ -53,14 +54,15 @@ def close_session(settings: AppSettings, user: CurrentUser, department_id: uuid.
     return queue.close_session(settings, department_id, user)
 
 
-@router.get('/patient/{key}/qr')
+@router.get('/patient/{key}/qr', dependencies=PUBLIC_LINK_TRAFFIC)
 def tracking_qr(settings: AppSettings, key: str, origin: str):
     return Response(
         queue.tracking_qr(settings, key, origin), media_type='image/svg+xml'
     )
 
 
-@router.get('/patient/{key}', response_model=PatientStatus)
-def patient(request: Request, settings: AppSettings, key: str):
-    request.app.state.public_status_limiter.check()
+@router.get(
+    '/patient/{key}', dependencies=PUBLIC_LINK_TRAFFIC, response_model=PatientStatus
+)
+def patient(settings: AppSettings, key: str):
     return queue.patient(settings, key)

@@ -8,6 +8,7 @@ import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.api.traffic import limit_public_link
 from backend.app import COOKIE, Settings, create_app
 from backend.core.config import CLINIC_TIMEZONE
 from backend.repositories.queue import lock_queue_writes
@@ -33,9 +34,9 @@ def check_error(response, status, code, *, legacy=False):
 
 @pytest.fixture
 def dry_api():
-    with TestClient(
-        create_app(Settings('unused', (ORIGIN,), automation_enabled=False))
-    ) as api:
+    app = create_app(Settings('unused', (ORIGIN,), automation_enabled=False))
+    app.dependency_overrides[limit_public_link] = lambda: None
+    with TestClient(app) as api:
         yield api
 
 

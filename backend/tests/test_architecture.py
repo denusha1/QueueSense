@@ -11,6 +11,7 @@ import psycopg
 from fastapi.testclient import TestClient
 
 from backend.api.dependencies import current_user, get_settings
+from backend.api.traffic import limit_public_link
 from backend.app import COOKIE, Settings, create_app
 from backend.core.config import CLINIC_TIMEZONE
 from backend.services import queue
@@ -52,6 +53,7 @@ def test_db_error_uses_route_template_and_keeps_safe_http_contract(monkeypatch, 
     monkeypatch.setattr(queue, 'connection', unavailable)
     caplog.set_level(logging.ERROR, logger='queuesense.api')
     app = create_app(Settings('unused', (ORIGIN,), automation_enabled=False))
+    app.dependency_overrides[limit_public_link] = lambda: None
 
     with TestClient(app) as browser:
         response = browser.get(f'/patient/{private_key}')

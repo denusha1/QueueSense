@@ -132,3 +132,9 @@ Not executed here: Docker build/Compose, hosted CI run, cloud deployment or real
 - Next.js 16.4.6 built successfully and passed TypeScript checking. Eight Playwright checks passed across product views, arrivals, core queue, planning, v1 runtime credentials, proxy errors, JWT renewal and operations/reporting. The browser runs used the locally cached Chromium headless build 1254 with Playwright 1.63.0 because the matching build download was still in progress.
 - A separate local fixture confirmed both Next.js proxies reject an upstream HTTP 200 HTML response and allow QR SVG with the API content policy. The proxy error regression now runs in CI when the workflow is executed.
 - After updating the affected packages, npm and PyPI scans reported zero advisories for the frontend, database test and backend lockfiles. See the [security audit](SECURITY_AUDIT.md) for scope and remaining risks.
+
+## Traffic management and publication preparation
+
+- Backend verification passed all 147 tests against local PostgreSQL. Migration 018 applied and re-ran cleanly. Tests verified concurrent request accounting, reset behavior, staff and capability isolation, and HTTP 429 with `Retry-After` for the partner origin. The restricted API database role also enforced a quota in a rolled-back smoke transaction. PGlite verified all 18 migrations.
+- Both OpenAPI files passed validation and generation drift checks. The measured, suppressed and 429 examples match the schemas. The generated Postman collection passed the Postman v2.1 schema check, and the Choreo Git metadata points to the one-operation publication contract.
+- The additional HTTPS 429 pass-through smoke was blocked by the automatic approval review usage limit. Choreo organization access, live gateway policies and Developer Portal publication remain pending.

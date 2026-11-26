@@ -7,13 +7,18 @@ from fastapi import APIRouter, Path
 
 from backend import experience
 from backend.api.dependencies import AppSettings, CurrentUser
+from backend.api.traffic import PUBLIC_LINK_TRAFFIC
 from backend.experience import Feedback
 from backend.schemas.legacy_responses import FeedbackStatus, FeedbackSubmission
 
 router = APIRouter()
 
 
-@router.get('/patient/{key}/feedback', response_model=FeedbackStatus)
+@router.get(
+    '/patient/{key}/feedback',
+    dependencies=PUBLIC_LINK_TRAFFIC,
+    response_model=FeedbackStatus,
+)
 def feedback_status(
     settings: AppSettings, key: str = Path(pattern=r'^[A-Za-z0-9_-]{30,80}$')
 ):
@@ -21,7 +26,10 @@ def feedback_status(
 
 
 @router.post(
-    '/patient/{key}/feedback', status_code=201, response_model=FeedbackSubmission
+    '/patient/{key}/feedback',
+    dependencies=PUBLIC_LINK_TRAFFIC,
+    status_code=201,
+    response_model=FeedbackSubmission,
 )
 def submit_feedback(
     settings: AppSettings,

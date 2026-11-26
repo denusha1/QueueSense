@@ -1,5 +1,7 @@
 # QueueSense API exposure
 
+Stage 10 preparation record. For the implemented partner origin and current console steps, see the [Stage 11 gateway design](gateway-design.md) and [proxy configuration](proxy-configuration.md).
+
 ## Deployment and addresses
 
 | Caller | Base address | Use |

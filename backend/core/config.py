@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
+from backend.core.choreo import ChoreoSettings
+
 CLINIC_TIMEZONE = ZoneInfo('Asia/Colombo')
 DEFAULT_ORIGINS = 'http://127.0.0.1:3001,http://localhost:3001'
 
@@ -76,6 +78,7 @@ class Settings:
     db_statement_timeout_ms: int = 20_000
     db_lock_timeout_ms: int = 5_000
     jwt: JwtSettings | None = None
+    choreo: ChoreoSettings | None = None
 
     @classmethod
     def from_env(cls) -> 'Settings':
@@ -111,6 +114,7 @@ class Settings:
             ),
             db_lock_timeout_ms=positive_setting('DB_LOCK_TIMEOUT_MS', 5_000, 600_000),
             jwt=JwtSettings.from_env(required=production),
+            choreo=ChoreoSettings.from_env(),
         )
 
 

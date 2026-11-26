@@ -10,7 +10,7 @@ from backend.api.endpoints.auth import renew, sign_in
 from backend.api.v1.dependencies import BearerCredentials
 from backend.core.security import COOKIE, REFRESH_COOKIE
 from backend.schemas.auth import Credentials
-from backend.schemas.v1 import ApiError, Data, Session
+from backend.schemas.v1 import Data, Session
 from backend.services.auth import SessionTokens, StaffSession, end_session
 
 router = APIRouter(prefix='/auth', tags=['v1 authentication'])
@@ -32,7 +32,6 @@ def result(tokens: SessionTokens, user: StaffSession):
     '/login',
     response_model=AuthResult,
     response_model_exclude_none=True,
-    responses={429: {'model': ApiError, 'description': 'Too many sign-in attempts'}},
 )
 def login(
     body: Credentials,

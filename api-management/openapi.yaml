@@ -1,90 +1,65 @@
 openapi: 3.0.3
 info:
-  title: QueueSense Waiting Time — Private Preview
+  title: QueueSense Weekly Waiting Time
   version: 1.0.0
-  description: Curated contract for import review and synthetic origin testing. Partner
-    OAuth and gateway-to-origin authorization are pending. Keep this preview out of
-    the Developer Portal.
+  description: Read-only partner analytics. Requests require an approved Choreo OAuth
+    application and a department grant bound to the signed proxy context.
+tags:
+- name: Waiting time
+  description: Aggregated weekly clinic waiting-time statistics.
 servers:
-- url: /api/v1/analytics
-  description: Relative private FastAPI origin base path
+- url: /api/integrations/v1
+  description: Relative integration origin base path
 paths:
-  /waiting-time:
+  /wait-time-summary:
     get:
-      tags:
-      - v1 analytics
-      summary: Get aggregate waiting-time statistics
-      operationId: getWaitingTimeSummary
-      security:
-      - QueueSenseAccessJWT: []
+      summary: Get the weekly waiting-time summary
+      operationId: getWeeklyWaitingTimeSummary
       parameters:
-      - name: start
-        in: query
-        required: true
-        schema:
-          type: string
-          format: date
-          title: Start
-      - name: end
-        in: query
-        required: true
-        schema:
-          type: string
-          format: date
-          title: End
       - name: department_id
         in: query
-        required: false
+        required: true
         schema:
+          type: string
+          format: uuid
           title: Department Id
+        description: Department UUID assigned to the approved proxy.
+        example: 5853b5a7-cfa4-4c3d-9c06-e97ce42487a1
+      - name: week_start
+        in: query
+        required: true
+        schema:
           type: string
-          format: uuid
-      - name: staff_id
-        in: query
-        required: false
-        schema:
-          title: Staff Id
-          type: string
-          format: uuid
-      - name: weekday
-        in: query
-        required: false
-        schema:
-          title: Weekday
-          type: integer
-          maximum: 7
-          minimum: 1
-      - name: hour_from
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 23
-          minimum: 0
-          default: 0
-          title: Hour From
-      - name: hour_to
-        in: query
-        required: false
-        schema:
-          type: integer
-          maximum: 23
-          minimum: 0
-          default: 23
-          title: Hour To
+          format: date
+          title: Week Start
+        description: Monday of a completed clinic week, formatted YYYY-MM-DD.
+        example: '2026-11-02'
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Data_WaitingTime_'
-              example:
-                data:
-                  measured_waits: 42
-                  average_wait: 14.2
-                  median_wait: 12
-                  p90_wait: 25
+                $ref: '#/components/schemas/Data_WeeklyWaitingTime_'
+              examples:
+                measured:
+                  value:
+                    data:
+                      department_id: 5853b5a7-cfa4-4c3d-9c06-e97ce42487a1
+                      week_start: '2026-11-02'
+                      suppressed: false
+                      metrics:
+                        measured_waits: 42
+                        average_wait: 14.2
+                        median_wait: 12.0
+                        p90_wait: 25.0
+                suppressed:
+                  value:
+                    data:
+                      department_id: 5853b5a7-cfa4-4c3d-9c06-e97ce42487a1
+                      week_start: '2026-11-02'
+                      suppressed: true
+                      metrics: null
           headers:
             X-Request-ID:
               schema:
@@ -102,22 +77,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
         '401':
-          description: Valid staff session required
+          description: Valid gateway assertion required at the origin
           headers:
             X-Request-ID:
               schema:
                 type: string
                 format: uuid
-            WWW-Authenticate:
-              schema:
-                type: string
-              example: Bearer
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
         '403':
-          description: Origin or operation forbidden
+          description: Proxy context or department is outside the approved grant
           headers:
             X-Request-ID:
               schema:
@@ -138,6 +109,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+        '429':
+          description: QueueSense origin limit reached. Gateway-generated 429 responses
+            may differ.
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            Retry-After:
+              schema:
+                type: integer
+                minimum: 1
+              description: Seconds before retrying an origin-rejected request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                success: false
+                error:
+                  code: rate_limited
+                  message: Too many requests. Wait before retrying.
+                  details: []
+                request_id: 72697aba-156f-4bf1-994d-858372a876df
         '500':
           description: Unexpected server failure
           headers:
@@ -150,7 +145,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
         '503':
-          description: Backend temporarily unavailable
+          description: Database or gateway signing keys temporarily unavailable
           headers:
             X-Request-ID:
               schema:
@@ -171,17 +166,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
-      description: This private preview requires an Admin or Manager staff access
-        JWT. Start and end are inclusive clinic dates, at most 366 days apart. Hours
-        use department-local time and weekday uses ISO 1–7. Waiting times are minutes.
-        When there are no measured waits, the count is zero and the statistics are
-        null.
+      tags:
+      - Waiting time
+      security:
+      - ChoreoOAuthBearer: []
+      description: Supply the approved department and the Monday of a completed clinic
+        week. Dates follow Asia/Colombo clinic time. Results are in minutes. Metrics
+        are null when fewer than ten waits were measured. Responses generated by the
+        gateway may differ from QueueSense origin responses.
 components:
   securitySchemes:
-    QueueSenseAccessJWT:
+    ChoreoOAuthBearer:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      description: OAuth 2.0 access token from the configured Choreo key manager.
   schemas:
     ApiError:
       properties:
@@ -202,14 +200,14 @@ components:
       - error
       - request_id
       title: ApiError
-    Data_WaitingTime_:
+    Data_WeeklyWaitingTime_:
       properties:
         data:
-          $ref: '#/components/schemas/WaitingTime'
+          $ref: '#/components/schemas/WeeklyWaitingTime'
       type: object
       required:
       - data
-      title: Data[WaitingTime]
+      title: Data[WeeklyWaitingTime]
     ErrorDetail:
       properties:
         code:
@@ -265,3 +263,30 @@ components:
       - median_wait
       - p90_wait
       title: WaitingTime
+    WeeklyWaitingTime:
+      properties:
+        department_id:
+          type: string
+          format: uuid
+          title: Department Id
+        week_start:
+          type: string
+          format: date
+          title: Week Start
+        suppressed:
+          type: boolean
+          title: Suppressed
+        metrics:
+          anyOf:
+          - $ref: '#/components/schemas/WaitingTime'
+          - type: object
+            nullable: true
+            enum:
+            - null
+      type: object
+      required:
+      - department_id
+      - week_start
+      - suppressed
+      - metrics
+      title: WeeklyWaitingTime

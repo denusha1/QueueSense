@@ -14,6 +14,7 @@ from backend.core.logging import log_event
 from backend.core.security import valid_private_key
 from backend.database import connection
 from backend.planning import department, duration, eligible, roster, waiting
+from backend.repositories.traffic import prune as prune_traffic_budgets
 
 LOG = logging.getLogger('queuesense.automation')
 
@@ -167,6 +168,7 @@ def run_cycle(settings, now=None):
             "SELECT pg_try_advisory_xact_lock(hashtextextended(current_schema() || ':queuesense_automation',0)) AS acquired"
         ).fetchone()['acquired']:
             return False
+        prune_traffic_budgets(conn)
         # The arrival window has ended. Record an observed outcome; never cancel a booking based on risk.
         expired = conn.execute(
             "UPDATE appointments a SET attendance_outcome='no_show',outcome_at=%s FROM appointment_slots s WHERE a.slot_id=s.id AND a.status='booked' AND a.attendance_outcome IS NULL AND s.starts_at<%s RETURNING a.id,s.department_id",

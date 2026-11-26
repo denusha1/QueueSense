@@ -250,7 +250,9 @@ def register(settings, scope, key, user, body):
     with connection(settings) as conn:
         allowed = throttle(conn, 'contact:' + scope + ':' + str(oid), 3)
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(
+            429, 'Try again in 15 minutes.', headers={'Retry-After': '900'}
+        )
     encrypted = encrypt(destination)
     code = str(secrets.randbelow(1000000)).zfill(6)
     try:

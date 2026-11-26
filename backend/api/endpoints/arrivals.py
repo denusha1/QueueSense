@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from backend import arrivals
 from backend.core.authorization import authorize
 from backend.api.dependencies import AppSettings, CurrentUser
+from backend.api.traffic import PUBLIC_LINK_TRAFFIC
 from backend.api.errors import log_failure
 from backend.arrivals import BookingInput, KioskInput, SelfInput, SlotInput
 from backend.schemas.legacy_responses import ArrivalInfo, ArrivalReceipt
@@ -62,17 +63,23 @@ def revoke(settings: AppSettings, user: CurrentUser, kiosk_id: uuid.UUID):
     return arrivals.revoke(settings, kiosk_id, user)
 
 
-@router.get('/self-checkin/{key}', response_model=ArrivalInfo)
+@router.get(
+    '/self-checkin/{key}', dependencies=PUBLIC_LINK_TRAFFIC, response_model=ArrivalInfo
+)
 def info(settings: AppSettings, key: str):
     return arrivals.info(settings, key)
 
 
-@router.get('/self-checkin/{key}/qr')
+@router.get('/self-checkin/{key}/qr', dependencies=PUBLIC_LINK_TRAFFIC)
 def qr(settings: AppSettings, key: str, origin: str):
     return Response(arrivals.qr(settings, key, origin), media_type='image/svg+xml')
 
 
-@router.post('/self-checkin/{key}', response_model=ArrivalReceipt)
+@router.post(
+    '/self-checkin/{key}',
+    dependencies=PUBLIC_LINK_TRAFFIC,
+    response_model=ArrivalReceipt,
+)
 def self_checkin(settings: AppSettings, key: str, body: SelfInput):
     return arrivals.self_checkin(settings, key, body)
 
@@ -91,7 +98,7 @@ async def queue_events(settings: AppSettings, user: CurrentUser, request: Reques
     )
 
 
-@router.get('/patient/{key}/events')
+@router.get('/patient/{key}/events', dependencies=PUBLIC_LINK_TRAFFIC)
 def patient_events(settings: AppSettings, key: str, request: Request):
     channel = arrivals.patient_event_channel(settings, key)
     return stream(request, arrivals.events(settings, channel, request.is_disconnected))

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Path, Query
 
 from backend import planning
 from backend.api.dependencies import AppSettings, CurrentUser
+from backend.api.traffic import PUBLIC_LINK_TRAFFIC
 from backend.planning import Comparison, DoctorRequest, Profile
 
 router = APIRouter()
@@ -17,7 +18,7 @@ def doctors(settings: AppSettings, user: CurrentUser, body: DoctorRequest):
     return planning.doctors(settings, body, user)
 
 
-@router.get('/patient/{key}/doctors')
+@router.get('/patient/{key}/doctors', dependencies=PUBLIC_LINK_TRAFFIC)
 def patient_doctors(
     settings: AppSettings, key: str = Path(pattern=r'^[A-Za-z0-9_-]{30,80}$')
 ):

@@ -17,6 +17,7 @@ from backend.schemas.errors import ApiError, LegacyApiError
 
 LOG = logging.getLogger('queuesense.api')
 V1_PREFIX = '/api/v1'
+INTEGRATION_PREFIX = '/api/integrations/v1'
 DATABASE_FAILURE = 'The database service is temporarily unavailable. Please try again.'
 TIMEOUT_MESSAGE = 'The operation exceeded its database time limit. Please try again.'
 ERROR_CODES = {
@@ -39,6 +40,7 @@ COMMON_RESPONSES = {
     401: 'Valid staff session required',
     403: 'Origin or operation forbidden',
     422: 'Invalid request',
+    429: 'Request limit reached',
     500: 'Unexpected server failure',
     503: 'Backend temporarily unavailable',
     504: 'Operation timed out',
@@ -52,7 +54,12 @@ def error_models(*, legacy: bool = False):
             'model': model,
             'description': description,
             'headers': {
-                REQUEST_ID_HEADER: {'schema': {'type': 'string', 'format': 'uuid'}}
+                REQUEST_ID_HEADER: {'schema': {'type': 'string', 'format': 'uuid'}},
+                **(
+                    {'Retry-After': {'schema': {'type': 'integer', 'minimum': 1}}}
+                    if status == 429
+                    else {}
+                ),
             },
         }
         for status, description in COMMON_RESPONSES.items()
@@ -82,7 +89,10 @@ def error_response(
         'request_id': request_id,
     }
     path = request.scope['path']
-    if path == V1_PREFIX or path.startswith(V1_PREFIX + '/'):
+    if any(
+        path == base or path.startswith(base + '/')
+        for base in (V1_PREFIX, INTEGRATION_PREFIX)
+    ):
         payload = ApiError.model_validate(common)
     else:
         payload = LegacyApiError.model_validate(

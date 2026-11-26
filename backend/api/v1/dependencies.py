@@ -10,6 +10,7 @@ from backend.core.errors import ServiceError
 from backend.core.jwt import INVALID_TOKEN
 from backend.core.security import COOKIE
 from backend.services.auth import StaffSession, resolve_session
+from backend.services.traffic import enforce_staff
 
 cookie_scheme = APIKeyCookie(
     name=COOKIE,
@@ -40,13 +41,16 @@ def current_staff(
             )
         token = bearer.credentials
     try:
-        return resolve_session(settings, token or '')
+        user = resolve_session(settings, token or '')
     except ServiceError as exc:
         if exc.status_code == 401 and settings.jwt:
             raise ServiceError(
                 401, exc.detail, headers={'WWW-Authenticate': 'Bearer'}
             ) from None
         raise
+
+    enforce_staff(settings, request.method, request.url.path, user)
+    return user
 
 
 V1User = Annotated[StaffSession, Depends(current_staff)]

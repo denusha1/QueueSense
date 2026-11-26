@@ -4,6 +4,7 @@ from fastapi import Request
 
 from backend.api.errors import error_response, unexpected_error
 from backend.api.request_ids import REQUEST_ID_HEADER, assign_request_id
+from backend.core.errors import ServiceError
 
 
 async def headers_and_origin(request: Request, call_next):
@@ -16,7 +17,13 @@ async def headers_and_origin(request: Request, call_next):
         response = error_response(request, 403, 'Request origin is not allowed.')
     else:
         try:
+            if request.url.path.startswith(('/patient/', '/self-checkin/')):
+                request.app.state.public_status_limiter.check()
             response = await call_next(request)
+        except ServiceError as exc:
+            response = error_response(
+                request, exc.status_code, exc.detail, headers=exc.headers
+            )
         except Exception as exc:
             response = unexpected_error(request, exc)
 

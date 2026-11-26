@@ -1,0 +1,23 @@
+# Choreo rate-limiting policy
+
+Reviewed against WSO2 Developer Platform documentation on 26 November 2026. The QueueSense Choreo organization is unavailable to the current account. The Console's onboarding restriction blocks live configuration and measurement. Every Choreo value below is a proposed Development setting. QueueSense origin budgets are documented separately. [Origin traffic management](../docs/TRAFFIC_MANAGEMENT.md) · [Deployment status](proxy-configuration.md#hosted-deployment-status)
+
+## Supported controls
+
+| Control | Behavior | QueueSense use |
+| --- | --- | --- |
+| API-level rate limiting | The request allocation for the chosen time unit applies across the API's operations. Choreo configures it separately for each environment. | Use for the single weekly waiting-time proxy operation. |
+| Operation-level rate limiting | Different request allocations can be set for individual resources. | Evaluate when the proxy exposes additional operations with materially different costs. |
+| Subscription plans and burst control | Organization admins define quotas. Publishers assign available plans to the API. The documented **Stop on Quota Reach** setting returns 429 when the enforced plan quota is exceeded. | Start with an approval-required plan for authorized partner applications. |
+| Clinic browser and capability traffic | These requests use the existing clinic ingress, not the partner proxy. | Enforce QueueSense budgets and apply per-IP flood protection at the clinic ingress where trusted client IP attribution is available. |
+
+[Official API rate limiting](https://wso2.com/engineering-platform/developer-platform/docs/api-management/api-rate-limiting/) · [Create subscription plans](https://wso2.com/engineering-platform/developer-platform/docs/administer/create-api-subscription-plans/)
+
+## Proposed Development configuration
+
+1. Deploy the [secured API Proxy](proxy-configuration.md). Open **Deploy**, select the **Development** environment card, and open the settings for **API Configuration**. The proxy guide shows this opening the **CORS, Rate Limiting and Resiliency** panel. Expand **Rate Limiting** and select **API Level**. Enter a **Request Limit** of 20 and a **Time Unit** of minute, then select **Apply**. The official proxy guide describes applying the changes as a redeployment. [Official proxy configuration](https://wso2.com/engineering-platform/developer-platform/docs/develop-components/develop-proxy/develop-an-api-proxy-from-an-open-api-specification/#step-41-apply-rate-limiting-to-the-api-proxy)
+2. If the owner approves a partner subscription, an organization admin opens **Settings → API Management → Subscription Plans → + Add Subscription Plan**. A starting example is 10 requests per minute with **Stop on Quota Reach** and **Approval required** selected. The publisher assigns it under **Manage → Subscription Plans** by enabling the plan and saving. Verify the registered application selected the intended plan. [Create subscription plans](https://wso2.com/engineering-platform/developer-platform/docs/administer/create-api-subscription-plans/) · [Assign subscription plans](https://wso2.com/engineering-platform/developer-platform/docs/api-management/manage-api-traffic/assign-subscription-plans-to-apis/)
+3. Confirm the deployment is active. Test with a valid approved application, one synthetic department and one completed week. Start at a steady rate, cross the subscription threshold, and record the returned status and headers. Use approved Development test applications with their own budgets to test API-level enforcement separately. Compare accepted origin requests with gateway responses so a gateway rejection can be distinguished from the QueueSense quota. Verify a request succeeds again after reset. Stop at the first denial and observe recovery instead of continuing a burst.
+4. Repeat verification for the exact Production configuration before recording any policy as active. Record environment, configured values, proxy revision, test window, accepted count, denied count and the response behavior. Use Choreo observability and origin request IDs where available.
+
+The documented gateway headers include `x-ratelimit-limit`, `x-ratelimit-remaining`, `x-ratelimit-reset` and `x-ratelimit-enforced`. Measure their behavior in the selected environment before parsing reset values. Treat gateway-generated bodies separately from QueueSense's `rate_limited` error. Use `Retry-After` when supplied. Otherwise use bounded backoff with jitter for safe reads. [Official response headers](https://wso2.com/engineering-platform/developer-platform/docs/api-management/api-rate-limiting/)
