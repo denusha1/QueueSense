@@ -13,7 +13,7 @@ export async function getSession() {
   try {
     const response = await fetch(`${authApi}/auth/me`, {
       headers: { Cookie: `queuesense_session=${encodeURIComponent(token)}` },
-      cache: 'no-store', signal: AbortSignal.timeout(5000),
+      cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(5000),
     });
     if (response.status === 401) return { user: null, unavailable: false, refreshable };
     if (!response.ok) return { user: null, unavailable: true, refreshable };

@@ -33,7 +33,7 @@ CONFLICT = {
 def list_tokens(
     query: Annotated[QueueQuery, Query()], settings: AppSettings, user: V1User
 ):
-    rows, total = queue.list_records(settings, query)
+    rows, total = queue.list_records(settings, query, user)
     return paged(rows, total, query)
 
 
@@ -53,7 +53,7 @@ def create_token(
 
 @router.get('/{token_id}', response_model=Data[QueueToken], responses={404: NOT_FOUND})
 def get_token(token_id: UUID, settings: AppSettings, user: V1User):
-    return {'data': queue.get_record(settings, token_id)}
+    return {'data': queue.get_record(settings, token_id, user)}
 
 
 @router.patch(
@@ -74,5 +74,5 @@ def token_history(
     settings: AppSettings,
     user: V1User,
 ):
-    rows, total = queue.history(settings, token_id, query.page_size, query.offset)
+    rows, total = queue.history(settings, token_id, query.page_size, query.offset, user)
     return paged(rows, total, query)

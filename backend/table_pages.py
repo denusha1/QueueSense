@@ -2,17 +2,18 @@
 
 from datetime import datetime
 
+from backend.core.authorization import authorize, queue_doctor
 from backend.core.config import CLINIC_TIMEZONE as TZ
-from backend.core.security import require
 from backend.database import connection
 from backend.repositories.queue import (
+    DOCTOR_QUEUE_FILTER,
     LIVE_FIELDS,
     LIVE_FILTER,
     LIVE_JOINS,
     PRIORITY_ORDER,
 )
 from backend.services.metrics import filters
-from backend.services.queue_views import decorate_queue_rows
+from backend.services.queue_views import decorate_staff_queue_rows
 
 
 def pattern(value):
@@ -32,12 +33,15 @@ def metadata(rows, total, page, size):
 
 
 def queue_page(settings, department, search, status, sort, page, page_size, user):
-
+    authorize(user, 'queue:read')
+    doctor_id = queue_doctor(user)
+    scope = LIVE_FILTER + DOCTOR_QUEUE_FILTER
+    scope_args = (department, department, doctor_id, doctor_id)
     where = (
-        LIVE_FILTER
+        scope
         + " AND (%s='all' OR t.status=%s) AND (d.code||'-'||lpad(t.token_no::text,greatest(3,length(t.token_no::text)),'0') ILIKE %s OR d.name ILIKE %s)"
     )
-    args = (department, department, status, status, pattern(search), pattern(search))
+    args = (*scope_args, status, status, pattern(search), pattern(search))
 
     order = PRIORITY_ORDER + ',t.id' if sort != 'token' else 'd.code,t.token_no,t.id'
     with connection(settings) as conn:
@@ -51,29 +55,23 @@ def queue_page(settings, department, search, status, sort, page, page_size, user
                 'SELECT t.status,count(*) AS n'
                 + LIVE_JOINS
                 + ' WHERE '
-                + LIVE_FILTER
+                + scope
                 + ' GROUP BY t.status',
-                (department, department),
+                scope_args,
             ).fetchall()
         }
-        if user['role'] == 'doctor':
-            for r in conn.execute(
-                'SELECT t.status,count(*) AS n'
-                + LIVE_JOINS
-                + ' WHERE '
-                + LIVE_FILTER
-                + " AND st.user_id=%s AND t.status IN ('called','in_service') GROUP BY t.status",
-                (department, department, user['id']),
-            ).fetchall():
-                summary['my_' + r['status']] = r['n']
+        if doctor_id:
+            for status in ('called', 'in_service'):
+                summary['my_' + status] = summary.get(status, 0)
         if sort == 'wait':
             # Live estimates require the active queue working set; historical completed rows aren't predicted.
-            all_rows = decorate_queue_rows(
+            all_rows = decorate_staff_queue_rows(
                 conn,
                 conn.execute(
                     LIVE_FIELDS + LIVE_JOINS + ' WHERE ' + where + ' ORDER BY ' + order,
                     args,
                 ).fetchall(),
+                doctor_id,
             )
             all_rows.sort(
                 key=lambda r: (
@@ -82,7 +80,7 @@ def queue_page(settings, department, search, status, sort, page, page_size, user
             )
             rows = all_rows[(page - 1) * page_size : page * page_size]
         else:
-            rows = decorate_queue_rows(
+            rows = decorate_staff_queue_rows(
                 conn,
                 conn.execute(
                     LIVE_FIELDS
@@ -94,6 +92,7 @@ def queue_page(settings, department, search, status, sort, page, page_size, user
                     + ' LIMIT %s OFFSET %s',
                     args + (page_size, (page - 1) * page_size),
                 ).fetchall(),
+                doctor_id,
             )
         result = metadata(rows, total, page, page_size)
         result.update(
@@ -115,7 +114,7 @@ def queue_page(settings, department, search, status, sort, page, page_size, user
 
 
 def audit_page(settings, search, start, end, entity_id, page, page_size, user):
-    require(user, ('admin',))
+    authorize(user, 'audit:read')
     if start and end:
         filters(start, end)
     joins = ' FROM audit_logs a LEFT JOIN users u ON u.id=a.user_id '
@@ -138,7 +137,7 @@ def audit_page(settings, search, start, end, entity_id, page, page_size, user):
 
 
 def users_page(settings, search, page, page_size, user):
-    require(user, ('admin',))
+    authorize(user, 'users:manage')
     args = (pattern(search),)
     with connection(settings) as conn:
         total = conn.execute(
@@ -153,7 +152,7 @@ def users_page(settings, search, page, page_size, user):
 
 
 def doctor_options(settings, user):
-    require(user, ('admin',))
+    authorize(user, 'users:manage')
     with connection(settings) as conn:
         return conn.execute(
             "SELECT id,email,role FROM users u WHERE u.role='doctor' AND u.is_active AND NOT EXISTS(SELECT 1 FROM staff s WHERE s.user_id=u.id) ORDER BY email LIMIT 200"

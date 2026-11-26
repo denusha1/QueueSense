@@ -1,18 +1,23 @@
 """Opt-in verified destinations, durable retries and generic external messages."""
 
+import base64
+import binascii
 import json
 import re
 import secrets
 import smtplib
+import ssl
 from datetime import datetime, timezone
 from email.message import EmailMessage
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 import httpx
+import requests
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.core.config import DeliverySettings
 from backend.core.errors import ServiceError
+from backend.core.authorization import authorize
 from backend.core.security import valid_private_key
 from backend.database import connection
 from backend.schemas.text import SingleLine
@@ -46,10 +51,16 @@ def mail(address, text):
     msg['To'] = address
     msg['Subject'] = 'QueueSense account or clinic update'
     msg.set_content(text)
-    transport = smtplib.SMTP_SSL if config.smtp_ssl else smtplib.SMTP
-    with transport(config.smtp_host, int(config.smtp_port), timeout=8) as smtp:
+    tls = ssl.create_default_context()
+    server = (config.smtp_host, int(config.smtp_port))
+    transport = (
+        smtplib.SMTP_SSL(*server, timeout=8, context=tls)
+        if config.smtp_ssl
+        else smtplib.SMTP(*server, timeout=8)
+    )
+    with transport as smtp:
         if not config.smtp_ssl:
-            smtp.starttls()
+            smtp.starttls(context=tls)
         if config.smtp_user:
             smtp.login(config.smtp_user, config.smtp_password)
         smtp.send_message(msg)
@@ -75,15 +86,46 @@ def send(channel, destination, text=GENERIC, url='/patient'):
     else:
         from pywebpush import webpush
 
-        webpush(
-            json.loads(destination),
-            data=json.dumps(
-                {'title': 'QueueSense update', 'body': GENERIC, 'url': url}
-            ),
-            vapid_private_key=config.vapid_private_key,
-            vapid_claims={'sub': config.vapid_subject},
-            timeout=8,
-        )
+        subscription = json.loads(destination)
+        validate_push_endpoint(subscription['endpoint'], config)
+        with PushSession() as session:
+            webpush(
+                subscription,
+                data=json.dumps(
+                    {'title': 'QueueSense update', 'body': GENERIC, 'url': url}
+                ),
+                vapid_private_key=config.vapid_private_key,
+                vapid_claims={'sub': config.vapid_subject},
+                timeout=8,
+                requests_session=session,
+            )
+
+
+class PushSession(requests.Session):
+    def request(self, method, url, **kwargs):
+        return super().request(method, url, **{**kwargs, 'allow_redirects': False})
+
+
+def validate_push_endpoint(endpoint: str, config: DeliverySettings) -> None:
+    allowed = {
+        'fcm.googleapis.com',
+        'updates.push.services.mozilla.com',
+        'web.push.apple.com',
+    } | config.push_allowed_hosts
+    try:
+        url = urlsplit(endpoint)
+        if (
+            url.scheme == 'https'
+            and url.hostname in allowed
+            and url.username is None
+            and url.password is None
+            and url.port in (None, 443)
+            and not re.search(r'[\s\\#]', endpoint)
+        ):
+            return
+    except ValueError:
+        pass
+    raise ServiceError(422, 'Unsupported push endpoint.')
 
 
 def run_delivery(settings):
@@ -160,6 +202,7 @@ class Subscription(BaseModel):
 
 def owner(settings, scope, key, user):
     if scope == 'staff':
+        authorize(user, 'account:self')
         return user['id']
     if not valid_private_key(key):
         raise ServiceError(404, 'Private link not found.')
@@ -289,35 +332,21 @@ def push(settings, scope, key, user, body):
         raise ServiceError(
             503, 'Background push is not configured or consent was not supplied.'
         )
-    try:
-        url = urlparse(body.endpoint)
-        port = url.port
-    except ValueError:
-        raise ServiceError(422, 'Unsupported push endpoint.')
-    allowed = {
-        'fcm.googleapis.com',
-        'updates.push.services.mozilla.com',
-        'web.push.apple.com',
-    } | DeliverySettings.from_env().push_allowed_hosts
-    if (
-        url.scheme != 'https'
-        or url.hostname not in allowed
-        or url.username
-        or url.password
-        or port not in (None, 443)
-        or set(body.keys) != {'auth', 'p256dh'}
-    ):
-        raise ServiceError(422, 'Unsupported push endpoint.')
-    import base64
-
-    try:
-        if (
-            len(base64.urlsafe_b64decode(body.keys['p256dh'] + '===')) != 65
-            or len(base64.urlsafe_b64decode(body.keys['auth'] + '===')) != 16
-        ):
-            raise ValueError()
-    except Exception:
+    validate_push_endpoint(body.endpoint, DeliverySettings.from_env())
+    if set(body.keys) != {'auth', 'p256dh'}:
         raise ServiceError(422, 'Invalid push subscription keys.')
+    try:
+        for key, size in (('auth', 16), ('p256dh', 65)):
+            encoded = body.keys[key]
+            if len(encoded) > 88 or not re.fullmatch(r'[A-Za-z0-9_-]+={0,2}', encoded):
+                raise ValueError
+            decoded = base64.b64decode(
+                encoded + '=' * (-len(encoded) % 4), altchars=b'-_', validate=True
+            )
+            if len(decoded) != size:
+                raise ValueError
+    except (ValueError, binascii.Error):
+        raise ServiceError(422, 'Invalid push subscription keys.') from None
     with connection(settings) as conn:
         conn.execute(
             "INSERT INTO notification_targets(owner_type,owner_id,channel,destination_encrypted,masked,enabled,verified_at) VALUES(%s,%s,'push',%s,'This browser',true,now()) ON CONFLICT(owner_type,owner_id,channel) DO UPDATE SET destination_encrypted=excluded.destination_encrypted,enabled=true,verified_at=now()",

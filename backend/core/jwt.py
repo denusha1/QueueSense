@@ -65,7 +65,7 @@ def verify_access_token(config: JwtSettings, token: str) -> AccessClaims:
         )
         claims = decoded['payload']
         if (
-            decoded['header'].get('typ') != ACCESS_TYPE
+            decoded['header'] != {'alg': ALGORITHM, 'typ': ACCESS_TYPE}
             or claims['token_use'] != 'access'
         ):
             raise ValueError

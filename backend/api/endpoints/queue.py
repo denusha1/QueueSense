@@ -18,7 +18,7 @@ router = APIRouter()
 
 @router.get('/queue/live', response_model=QueueLive, response_model_exclude_unset=True)
 def live(settings: AppSettings, user: CurrentUser, department: uuid.UUID | None = None):
-    return queue.live(settings, department)
+    return queue.live(settings, department, user)
 
 
 @router.post('/queue/check-in', status_code=201)
@@ -62,4 +62,5 @@ def tracking_qr(settings: AppSettings, key: str, origin: str):
 
 @router.get('/patient/{key}', response_model=PatientStatus)
 def patient(request: Request, settings: AppSettings, key: str):
-    return queue.patient(settings, key, request.app.state.public_status_hits)
+    request.app.state.public_status_limiter.check()
+    return queue.patient(settings, key)

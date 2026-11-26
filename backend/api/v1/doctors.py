@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query
 
+from backend.core.authorization import authorize
 from backend.api.dependencies import AppSettings
 from backend.api.v1.dependencies import V1User
 from backend.schemas.v1 import (
@@ -27,12 +28,14 @@ NOT_FOUND = {'model': ApiError, 'description': 'Doctor not found'}
 def list_doctors(
     query: Annotated[DoctorsQuery, Query()], settings: AppSettings, user: V1User
 ):
+    authorize(user, 'doctor:read')
     rows, total = clinic.list_doctors(settings, query)
     return paged(rows, total, query)
 
 
 @router.get('/{doctor_id}', response_model=Data[Doctor], responses={404: NOT_FOUND})
 def get_doctor(doctor_id: UUID, settings: AppSettings, user: V1User):
+    authorize(user, 'doctor:read')
     return {'data': clinic.get_doctor(settings, doctor_id)}
 
 
@@ -45,5 +48,6 @@ def doctor_schedule(
     settings: AppSettings,
     user: V1User,
 ):
+    authorize(user, 'doctor:read')
     rows, total = clinic.doctor_schedule(settings, doctor_id, query)
     return paged(rows, total, query)

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request, Response
 from fastapi.responses import StreamingResponse
 
 from backend import arrivals
+from backend.core.authorization import authorize
 from backend.api.dependencies import AppSettings, CurrentUser
 from backend.api.errors import log_failure
 from backend.arrivals import BookingInput, KioskInput, SelfInput, SlotInput
@@ -78,6 +79,7 @@ def self_checkin(settings: AppSettings, key: str, body: SelfInput):
 
 @router.get('/queue/events')
 async def queue_events(settings: AppSettings, user: CurrentUser, request: Request):
+    authorize(user, 'queue:read', 'performance:read')
     return stream(
         request,
         arrivals.events(

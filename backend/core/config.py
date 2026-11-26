@@ -5,6 +5,7 @@ import binascii
 import os
 import re
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 CLINIC_TIMEZONE = ZoneInfo('Asia/Colombo')
@@ -83,7 +84,7 @@ class Settings:
             raise RuntimeError('DATABASE_URL is required')
         production = is_production()
         origins = tuple(
-            value.strip().rstrip('/')
+            frontend_origin(value.strip())
             for value in os.environ.get('FRONTEND_ORIGINS', DEFAULT_ORIGINS).split(',')
             if value.strip()
         )
@@ -111,6 +112,33 @@ class Settings:
             db_lock_timeout_ms=positive_setting('DB_LOCK_TIMEOUT_MS', 5_000, 600_000),
             jwt=JwtSettings.from_env(required=production),
         )
+
+
+def frontend_origin(value: str) -> str:
+    """Validate a configured browser origin and use its serialized form."""
+    try:
+        origin = urlsplit(value)
+        port = origin.port
+    except ValueError:
+        raise RuntimeError('FRONTEND_ORIGINS must contain valid HTTP(S) origins') from None
+    if (
+        origin.scheme not in ('http', 'https')
+        or not origin.hostname
+        or origin.username is not None
+        or origin.password is not None
+        or origin.path not in ('', '/')
+        or port == 0
+        or re.search(r'[\s*\\?#]', value)
+        or not re.fullmatch(r'[A-Za-z0-9.:-]+', origin.hostname)
+        or origin.netloc.endswith(':')
+    ):
+        raise RuntimeError('FRONTEND_ORIGINS must contain valid HTTP(S) origins')
+    host = origin.hostname
+    if ':' in host:
+        host = f'[{host}]'
+    default_port = 443 if origin.scheme == 'https' else 80
+    authority = f'{host}:{port}' if port is not None and port != default_port else host
+    return f'{origin.scheme}://{authority}'
 
 
 def positive_setting(name: str, default: int, maximum: int, *, minimum: int = 1) -> int:

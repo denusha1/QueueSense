@@ -6,6 +6,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Query, Response
 
+from backend.core.authorization import authorize
 from backend.api.dependencies import AppSettings, CurrentUser
 from backend.schemas.product import (
     CheckIn,
@@ -52,11 +53,13 @@ def performance(
 
 @router.post('/predict/wait-time')
 def predict(settings: AppSettings, user: CurrentUser, body: CheckIn):
+    authorize(user, 'planning:read')
     return reporting.predict(settings, body)
 
 
 @router.get('/alerts')
 def alerts(settings: AppSettings, user: CurrentUser):
+    authorize(user, 'alerts:read')
     return reporting.alerts(settings)
 
 
@@ -91,7 +94,7 @@ def export(
         'department',
         'waiting',
         'peak_hour',
-    ] = 'visits',
+    ] | None = None,
     department: uuid.UUID | None = None,
     staff: uuid.UUID | None = None,
     weekday: int | None = Query(None, ge=1, le=7),

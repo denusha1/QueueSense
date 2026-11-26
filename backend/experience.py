@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 import psycopg
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from backend.core.authorization import authorize
 from backend.core.errors import ServiceError
-from backend.core.security import MANAGERS, require
 from backend.database import connection
 from backend.repositories.audit import audit
 
@@ -69,7 +69,7 @@ def submit_feedback(settings, body, key):
 
 
 def summary(settings, start, end, department, user):
-    require(user, MANAGERS)
+    authorize(user, 'feedback:read')
     if start > end or (end - start).days > 366:
         raise ServiceError(422, 'Choose a date range of at most 366 days.')
     # Cohort is visit date in the clinic timezone, matching waiting-time analytics.
@@ -88,12 +88,14 @@ def summary(settings, start, end, department, user):
             + ' GROUP BY 1 ORDER BY min(t.service_start_at-t.check_in_at)',
             params,
         ).fetchall()
-        comments = conn.execute(
-            'SELECT f.rating,f.comment,f.created_at,d.name AS department '
-            + base
-            + " AND f.comment<>'' ORDER BY f.created_at DESC LIMIT 100",
-            params,
-        ).fetchall()
+        comments = []
+        if 'feedback:comments' in user['permissions']:
+            comments = conn.execute(
+                'SELECT f.rating,f.comment,f.created_at,d.name AS department '
+                + base
+                + " AND f.comment<>'' ORDER BY f.created_at DESC LIMIT 100",
+                params,
+            ).fetchall()
     return dict(
         summary=totals,
         bands=bands,
@@ -103,7 +105,7 @@ def summary(settings, start, end, department, user):
 
 
 def services(settings, user):
-    require(user, MANAGERS)
+    authorize(user, 'performance:read')
     checks = [
         {
             'service': 'Application API',

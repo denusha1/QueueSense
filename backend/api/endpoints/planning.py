@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.post('/planning/doctors')
 def doctors(settings: AppSettings, user: CurrentUser, body: DoctorRequest):
-    return planning.doctors(settings, body)
+    return planning.doctors(settings, body, user)
 
 
 @router.get('/patient/{key}/doctors')
@@ -26,7 +26,7 @@ def patient_doctors(
 
 @router.get('/planning/balance')
 def balance(settings: AppSettings, user: CurrentUser, department_id: uuid.UUID):
-    return planning.balance(settings, department_id)
+    return planning.balance(settings, department_id, user)
 
 
 @router.get('/planning/forecast')

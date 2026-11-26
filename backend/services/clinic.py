@@ -5,10 +5,11 @@ from uuid import UUID
 
 from psycopg.errors import ExclusionViolation
 
+from backend.core.authorization import authorize
 from backend.core.config import CLINIC_TIMEZONE as TZ
 from backend.core.config import Settings
 from backend.core.errors import ServiceError
-from backend.core.security import HASHER, require
+from backend.core.security import HASHER
 from backend.database import DatabaseConnection, Row, connection, read_snapshot
 from backend.repositories import clinicians
 from backend.repositories.audit import audit
@@ -21,7 +22,9 @@ def station(conn: DatabaseConnection, staff_id: UUID, user: StaffSession) -> Row
     row = clinicians.lock_station(conn, staff_id)
     if not row:
         raise ServiceError(404, 'Active clinician not found.')
-    if user['role'] == 'doctor' and str(row['user_id']) != user['id']:
+    if user['role'] == 'doctor' and (
+        row['staff_type'] != 'doctor' or str(row['user_id']) != user['id']
+    ):
         raise ServiceError(
             403, 'Doctors can only manage their assigned clinician queue.'
         )
@@ -49,15 +52,21 @@ def departments(settings):
         return conn.execute('SELECT * FROM departments ORDER BY name').fetchall()
 
 
-def staff(settings):
+def staff(settings, user: StaffSession):
+    authorize(user, 'doctor:read')
     with connection(settings) as conn:
-        return conn.execute(
+        rows = conn.execute(
             "SELECT st.*,d.name AS department,coalesce(a.status,'offline') AS availability,a.changed_at FROM staff st JOIN departments d ON d.id=st.department_id LEFT JOIN LATERAL(SELECT status,changed_at FROM staff_availability WHERE staff_id=st.id AND (changed_at AT TIME ZONE 'Asia/Colombo')::date=(now() AT TIME ZONE 'Asia/Colombo')::date ORDER BY changed_at DESC LIMIT 1)a ON true ORDER BY d.name,st.display_name"
         ).fetchall()
+        if 'users:manage' not in user['permissions']:
+            for row in rows:
+                if str(row['user_id']) != user['id']:
+                    row['user_id'] = None
+        return rows
 
 
 def users(settings, user):
-    require(user, ('admin',))
+    authorize(user, 'users:manage')
     with connection(settings) as conn:
         return conn.execute(
             'SELECT id,email,role,is_active,created_at FROM users ORDER BY email'
@@ -65,7 +74,7 @@ def users(settings, user):
 
 
 def create_user(settings, body, user):
-    require(user, ('admin',))
+    authorize(user, 'users:manage')
     with connection(settings) as conn:
         if conn.execute(
             'SELECT 1 FROM users WHERE email=%s', (body.email.lower(),)
@@ -80,7 +89,7 @@ def create_user(settings, body, user):
 
 
 def update_user(settings, user_id, body, user):
-    require(user, ('admin',))
+    authorize(user, 'users:manage')
     if str(user_id) == user['id']:
         raise ServiceError(409, 'You cannot change your own access.')
     with connection(settings) as conn:
@@ -96,7 +105,7 @@ def update_user(settings, user_id, body, user):
 
 
 def add_department(settings, body, user):
-    require(user, ('admin',))
+    authorize(user, 'department:manage')
     with connection(settings) as conn:
         if conn.execute(
             'SELECT 1 FROM departments WHERE code=%s OR name=%s', (body.code, body.name)
@@ -111,7 +120,7 @@ def add_department(settings, body, user):
 
 
 def update_department(settings, department_id, body, user):
-    require(user, ('admin',))
+    authorize(user, 'department:manage')
     with connection(settings) as conn:
         if conn.execute(
             'SELECT 1 FROM departments WHERE (code=%s OR name=%s) AND id<>%s',
@@ -129,7 +138,7 @@ def update_department(settings, department_id, body, user):
 
 
 def add_staff(settings, body, user):
-    require(user, ('admin',))
+    authorize(user, 'doctor:manage')
     with connection(settings) as conn:
         if not conn.execute(
             'SELECT 1 FROM departments WHERE id=%s', (body.department_id,)
@@ -161,7 +170,7 @@ def schedules(settings: Settings, start: date, end: date) -> list[Row]:
 def schedule(
     settings: Settings, staff_id: UUID, body: ScheduleInput, user: StaffSession
 ):
-    require(user, ('admin',))
+    authorize(user, 'doctor:manage')
     if (
         not body.start_at.tzinfo
         or not body.end_at.tzinfo
@@ -192,7 +201,7 @@ def schedule(
 
 
 def audit_log(settings, search, start, end, entity_id, offset, user):
-    require(user, ('admin',))
+    authorize(user, 'audit:read')
     if start and end:
         filters(start, end)
     with connection(settings) as conn:

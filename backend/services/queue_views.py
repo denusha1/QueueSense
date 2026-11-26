@@ -38,3 +38,13 @@ def decorate_queue_rows(conn: DatabaseConnection, rows: list[Row]) -> list[Row]:
             else None
         )
     return rows
+
+
+def decorate_staff_queue_rows(
+    conn: DatabaseConnection, rows: list[Row], doctor_id: str | None
+) -> list[Row]:
+    result = decorate_queue_rows(conn, rows)
+    if doctor_id:
+        for row in result:
+            row['priority_reason'] = ''
+    return result

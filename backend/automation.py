@@ -8,9 +8,10 @@ from datetime import datetime, timedelta, timezone
 
 from psycopg.types.json import Jsonb
 
+from backend.core.authorization import authorize
 from backend.core.errors import ServiceError
 from backend.core.logging import log_event
-from backend.core.security import require, valid_private_key
+from backend.core.security import valid_private_key
 from backend.database import connection
 from backend.planning import department, duration, eligible, roster, waiting
 
@@ -374,7 +375,7 @@ def warnings(settings, department_id):
 
 
 def risks(settings, day, user):
-    require(user, ('reception', 'admin'))
+    authorize(user, 'appointment:read')
     from datetime import date
 
     try:
@@ -392,18 +393,20 @@ def risks(settings, day, user):
 
 
 def staff_feed(settings, user):
+    authorize(user, 'alerts:read')
     with connection(settings) as conn:
         return conn.execute(
-            "SELECT n.id,n.kind,n.message,n.created_at,d.name AS department,r.read_at IS NOT NULL AS is_read FROM notifications n JOIN departments d ON d.id=n.department_id LEFT JOIN notification_reads r ON r.notification_id=n.id AND r.user_id=%s WHERE n.audience='staff' ORDER BY n.created_at DESC,n.id LIMIT 50",
-            (user['id'],),
+            "SELECT n.id,n.kind,n.message,n.created_at,d.name AS department,r.read_at IS NOT NULL AS is_read FROM notifications n JOIN departments d ON d.id=n.department_id LEFT JOIN notification_reads r ON r.notification_id=n.id AND r.user_id=%s WHERE n.audience='staff' AND (%s OR n.kind<>'no_show_risk') ORDER BY n.created_at DESC,n.id LIMIT 50",
+            (user['id'], 'appointment:read' in user['permissions']),
         ).fetchall()
 
 
 def staff_read(settings, notification_id, user):
+    authorize(user, 'alerts:read')
     with connection(settings) as conn:
         row = conn.execute(
-            "SELECT id FROM notifications WHERE id=%s AND audience='staff'",
-            (notification_id,),
+            "SELECT id FROM notifications WHERE id=%s AND audience='staff' AND (%s OR kind<>'no_show_risk')",
+            (notification_id, 'appointment:read' in user['permissions']),
         ).fetchone()
         if not row:
             raise ServiceError(404, 'Notification not found.')

@@ -11,13 +11,13 @@ from psycopg import sql
 from psycopg.errors import UniqueViolation
 from pydantic import Field
 
+from backend.core.authorization import authorize
 from backend.core.config import CLINIC_TIMEZONE as TZ
 from backend.core.config import Settings
 from backend.core.errors import ServiceError
-from backend.core.security import require, valid_private_key
+from backend.core.security import valid_private_key
 from backend.database import connection, connection_parameters
 from backend.repositories.audit import audit
-from backend.repositories.permissions import require_permission
 from backend.repositories.queue import lock_queue_writes
 from backend.schemas.product import Input
 from backend.services.auth import StaffSession
@@ -25,7 +25,6 @@ from backend.services.patients import validate_link
 from backend.services.qr import render_qr
 from backend.services.queue import issue_token
 
-ROLES = ('admin', 'reception')
 
 
 class SlotInput(Input):
@@ -96,7 +95,9 @@ async def events(
                     break
                 cursor = await conn.execute(
                     'SELECT 1 FROM auth_sessions s JOIN users u ON u.id=s.user_id '
-                    'WHERE s.id=%s AND s.user_id=%s AND s.auth_mode=%s AND s.expires_at>now() AND u.is_active',
+                    'WHERE s.id=%s AND s.user_id=%s AND s.auth_mode=%s AND s.expires_at>now() AND u.is_active '
+                    "AND EXISTS (SELECT 1 FROM role_permissions rp WHERE rp.role_code=u.role "
+                    "AND rp.permission_code IN ('queue:read','performance:read'))",
                     (
                         staff_session['session_id'],
                         staff_session['id'],
@@ -111,7 +112,7 @@ async def events(
 
 
 def slots(settings, day, department, user):
-    require(user, ROLES)
+    authorize(user, 'appointment:read')
     with connection(settings) as conn:
         return conn.execute(
             """SELECT s.*,d.name AS department,count(a.id) FILTER (WHERE a.status!='cancelled') AS booked
@@ -123,7 +124,7 @@ def slots(settings, day, department, user):
 
 
 def create_slot(settings, body, user):
-    require(user, ROLES)
+    authorize(user, 'appointment:update')
     now = datetime.now(TZ)
     if body.starts_at.tzinfo is None or not now < body.starts_at <= now + timedelta(
         days=90
@@ -148,7 +149,7 @@ def create_slot(settings, body, user):
 
 
 def appointments(settings, day, user):
-    require(user, ROLES)
+    authorize(user, 'appointment:read')
     with connection(settings) as conn:
         rows = conn.execute(
             """SELECT a.*,s.starts_at,d.name AS department FROM appointments a
@@ -162,8 +163,8 @@ def appointments(settings, day, user):
 
 
 def book(settings, body, user):
+    authorize(user, 'appointment:book')
     with connection(settings) as conn:
-        require_permission(conn, user['id'], 'appointment:book')
         validate_link(conn, body.patient_id)
         slot = conn.execute(
             'SELECT s.*,d.is_active FROM appointment_slots s JOIN departments d ON d.id=s.department_id WHERE s.id=%s FOR UPDATE OF s',
@@ -216,7 +217,7 @@ def book(settings, body, user):
 
 
 def cancel(settings, appointment_id, user):
-    require(user, ROLES)
+    authorize(user, 'appointment:update')
     with connection(settings) as conn:
         row = conn.execute(
             "UPDATE appointments SET status='cancelled' WHERE id=%s AND status='booked' RETURNING *",
@@ -244,7 +245,7 @@ def cancel(settings, appointment_id, user):
 
 
 def kiosks(settings, user):
-    require(user, ROLES)
+    authorize(user, 'kiosk:manage')
     with connection(settings) as conn:
         return conn.execute(
             'SELECT k.*,d.name AS department FROM checkin_kiosks k JOIN departments d ON d.id=k.department_id WHERE expires_at>now() AND revoked_at IS NULL ORDER BY d.name'
@@ -252,7 +253,7 @@ def kiosks(settings, user):
 
 
 def create_kiosk(settings, body, user):
-    require(user, ROLES)
+    authorize(user, 'kiosk:manage')
     with connection(settings) as conn:
         lock_queue_writes(conn)
         if not conn.execute(
@@ -277,7 +278,7 @@ def create_kiosk(settings, body, user):
 
 
 def revoke(settings, kiosk_id, user):
-    require(user, ROLES)
+    authorize(user, 'kiosk:manage')
     with connection(settings) as conn:
         row = conn.execute(
             'UPDATE checkin_kiosks SET revoked_at=now() WHERE id=%s RETURNING id',
@@ -340,7 +341,9 @@ def self_checkin(settings, key, body):
             ).fetchone()['n']
             if not token_id and count >= 20:
                 raise ServiceError(
-                    429, 'Many arrivals just checked in. Please try again in a minute.'
+                    429,
+                    'Many arrivals just checked in. Please try again in a minute.',
+                    headers={'Retry-After': '60'},
                 )
         if token_id:
             token = conn.execute(

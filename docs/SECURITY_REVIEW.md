@@ -1,5 +1,7 @@
 # QueueSense security review
 
+See the [Stage 09 security audit](SECURITY_AUDIT.md) for the current implementation and advisory checks.
+
 Review date: 5 October 2026  
 Scope: repository implementation and recorded local verification. This is a project-level review, not an independent penetration test or production certification.
 

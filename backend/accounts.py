@@ -7,8 +7,9 @@ from urllib.parse import quote
 from argon2.exceptions import InvalidHashError, VerificationError
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.core.authorization import authorize
 from backend.core.errors import ServiceError
-from backend.core.security import HASHER, digest, require
+from backend.core.security import HASHER, digest
 from backend.database import connection
 from backend.repositories.audit import audit
 from backend.schemas.text import SingleLine
@@ -74,6 +75,7 @@ def verify_password(conn, user, password, otp=None, require_mfa=True):
 
 
 def profile(settings, user):
+    authorize(user, 'account:self')
     with connection(settings) as conn:
         row = conn.execute(
             'SELECT id,email,role,display_name,preferred_language FROM users WHERE id=%s',
@@ -89,6 +91,7 @@ def profile(settings, user):
 
 
 def save_profile(settings, body, user):
+    authorize(user, 'account:self')
     with connection(settings) as conn:
         conn.execute(
             'UPDATE users SET display_name=%s,preferred_language=%s WHERE id=%s',
@@ -99,6 +102,7 @@ def save_profile(settings, body, user):
 
 
 def sessions(settings, user):
+    authorize(user, 'account:self')
     with connection(settings) as conn:
         return conn.execute(
             'SELECT id,created_at,expires_at,device_label,id=%s AS current FROM auth_sessions WHERE user_id=%s AND expires_at>now() ORDER BY created_at DESC',
@@ -107,6 +111,7 @@ def sessions(settings, user):
 
 
 def revoke(settings, session_id, user):
+    authorize(user, 'account:self')
     with connection(settings) as conn:
         row = conn.execute(
             'DELETE FROM auth_sessions WHERE id=%s AND user_id=%s RETURNING id',
@@ -120,10 +125,11 @@ def revoke(settings, session_id, user):
 
 
 def password(settings, body, device, user):
+    authorize(user, 'account:self')
     with connection(settings) as conn:
         allowed = throttle(conn, 'password:' + user['id'])
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(429, 'Try again in 15 minutes.', headers={'Retry-After': '900'})
     valid = False
     with connection(settings) as conn:
         valid = verify_password(conn, user, body.current_password, body.otp)
@@ -145,11 +151,11 @@ def password(settings, body, device, user):
 
 
 def setup(settings, body, user):
-    require(user, ('admin',))
+    authorize(user, 'account:security')
     with connection(settings) as conn:
         allowed = throttle(conn, 'mfa:' + user['id'])
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(429, 'Try again in 15 minutes.', headers={'Retry-After': '900'})
     with connection(settings) as conn:
         if not verify_password(conn, user, body.password, body.otp):
             raise ServiceError(
@@ -179,12 +185,12 @@ def setup(settings, body, user):
 
 
 def confirm(settings, body, user):
-    require(user, ('admin',))
+    authorize(user, 'account:security')
     valid = False
     with connection(settings) as conn:
         allowed = throttle(conn, 'mfa:' + user['id'])
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(429, 'Try again in 15 minutes.', headers={'Retry-After': '900'})
     with connection(settings) as conn:
         row = conn.execute(
             "SELECT * FROM account_mfa WHERE user_id=%s AND NOT enabled AND created_at>now()-interval '10 minutes' FOR UPDATE",
@@ -208,11 +214,11 @@ def confirm(settings, body, user):
 
 
 def disable(settings, body, user):
-    require(user, ('admin',))
+    authorize(user, 'account:security')
     with connection(settings) as conn:
         allowed = throttle(conn, 'mfa:' + user['id'])
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(429, 'Try again in 15 minutes.', headers={'Retry-After': '900'})
     valid = False
     with connection(settings) as conn:
         valid = verify_password(conn, user, body.password, body.otp)
@@ -229,7 +235,7 @@ def request_recovery(settings, body, peer):
     with connection(settings) as conn:
         allowed = throttle(conn, 'recovery:' + digest(email) + ':' + digest(peer), 3)
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(429, 'Try again in 15 minutes.', headers={'Retry-After': '900'})
     from backend.delivery import capabilities, mail
 
     with connection(settings) as conn:
@@ -268,7 +274,7 @@ def reset(settings, body, peer):
     with connection(settings) as conn:
         allowed = throttle(conn, 'reset:' + digest(peer))
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(429, 'Try again in 15 minutes.', headers={'Retry-After': '900'})
     valid = False
     with connection(settings) as conn:
         row = conn.execute(
@@ -323,11 +329,11 @@ def reset(settings, body, peer):
 
 
 def admin_recovery(settings, user_id, body, user):
-    require(user, ('admin',))
+    authorize(user, 'account:security')
     with connection(settings) as conn:
         allowed = throttle(conn, 'admin-recovery:' + user['id'])
     if not allowed:
-        raise ServiceError(429, 'Try again in 15 minutes.')
+        raise ServiceError(429, 'Try again in 15 minutes.', headers={'Retry-After': '900'})
     with connection(settings) as conn:
         if not verify_password(conn, user, body.password, body.otp):
             raise ServiceError(400, 'Password or authentication code is incorrect.')

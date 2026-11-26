@@ -27,6 +27,7 @@ def test_router_dependencies_can_be_overridden_independently():
         automation_enabled=False,
     )
     app.dependency_overrides[current_user] = lambda: {
+        'permissions': ['account:self'],
         'id': '06f2580a-9e67-4b35-b4ef-9f4012b1dbb1',
         'email': 'doctor@example.test',
         'role': 'doctor',

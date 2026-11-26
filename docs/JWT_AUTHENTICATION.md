@@ -1,6 +1,6 @@
 # QueueSense staff JWT authentication
 
-QueueSense issues staff access JWTs after the existing email, password, role, and MFA checks. Passwords use Argon2id. The existing PostgreSQL login attempt limits remain in place. Every staff request still looks up the current user, role, and active session in PostgreSQL, so role changes and revocation take effect on the next protected request.
+QueueSense issues staff access JWTs after the existing email, password, role, and MFA checks. Passwords use Argon2id. The existing PostgreSQL login attempt limits remain in place. Every staff request still looks up the current user, role, permissions, and active session in PostgreSQL, so role changes and revocation take effect on the next protected request.
 
 ## FastAPI token policy
 
@@ -13,7 +13,7 @@ QueueSense issues staff access JWTs after the existing email, password, role, an
 | `JWT_ACCESS_TTL_SECONDS` | 600 seconds | Accepted range is 60 to 900 seconds. Access expiry is capped at the session's absolute expiry. |
 | `JWT_REFRESH_TTL_SECONDS` | 28,800 seconds | Accepted range is 300 to 86,400 seconds and must exceed the access TTL. Refresh rotates the credential without extending that absolute lifetime. |
 
-The access JWT uses `typ=at+jwt` and `token_use=access`. The validator requires `iss`, `aud`, `sub`, `sid`, `jti`, `iat`, `nbf`, and `exp`. It enforces canonical UUIDs for subject, session and token ID, integer timestamps, configured lifetime, and zero expiry leeway. After verification, FastAPI checks that `sid` belongs to `sub`, that the session is active and unexpired, and that the user's account is active. Roles, contact data and patient data are excluded from JWT claims. Invalid or missing credentials receive a generic 401 with a request ID.
+The access JWT header contains only `alg=HS256` and `typ=at+jwt`. The payload uses `token_use=access`. The validator requires `iss`, `aud`, `sub`, `sid`, `jti`, `iat`, `nbf`, and `exp`. It enforces canonical UUIDs for subject, session and token ID, integer timestamps, configured lifetime, and zero expiry leeway. After verification, FastAPI checks that `sid` belongs to `sub`, that the session is active and unexpired, and that the user's account is active. Roles, contact data and patient data are excluded from JWT claims. Invalid or missing credentials receive a generic 401 with a request ID.
 
 ## Browser, v1 clients, and revocation
 
@@ -26,7 +26,7 @@ The access JWT uses `typ=at+jwt` and `token_use=access`. The validator requires 
 
 ## Migration and operating the signing key
 
-Apply forward migration 016 before deploying the API. It labels existing sessions as opaque and preserves their rows. In a non-production environment, omitting the secret retains the previous opaque session mode for compatibility. Setting the secret enables JWT mode and requires old opaque sessions to sign in again. Production requires the secret at startup.
+Apply forward migrations through 017 before deploying the API. It labels existing sessions as opaque and preserves their rows. In a non-production environment, omitting the secret retains the previous opaque session mode for compatibility. Setting the secret enables JWT mode and requires old opaque sessions to sign in again. Production requires the secret at startup.
 
 Generate a random deployment key with a secret manager or `secrets.token_urlsafe(32)` in a private provisioning process. When rotating, replace the key across replicas as one deployment so access tokens signed under the old key become invalid. Unexpired refresh sessions can then obtain access JWTs under the replacement key. During a compromise, revoke affected staff sessions as well. Use TLS for the browser and private API ingress, and redact cookies and Authorization headers from proxy and infrastructure logs.
 

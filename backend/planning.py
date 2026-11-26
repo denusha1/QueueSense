@@ -6,11 +6,12 @@ from datetime import datetime, timedelta
 
 from pydantic import Field
 
+from backend.core.authorization import authorize, queue_doctor
 from backend.core.config import CLINIC_TIMEZONE as TZ
 from backend.core.errors import ServiceError
-from backend.core.security import MANAGERS, require
 from backend.database import connection
 from backend.repositories.audit import audit
+from backend.repositories.queue import DOCTOR_QUEUE_FILTER
 from backend.schemas.product import CheckIn, Input
 
 
@@ -267,14 +268,18 @@ def compare(body):
     )
 
 
-def doctors(settings, body):
+def doctors(settings, body, user):
+    authorize(user, 'planning:read')
     with connection(settings) as conn:
         requirements = body.model_dump()
         target = body.token_id
         if target:
+            authorize(user, 'queue:read')
+            doctor_id = queue_doctor(user)
             requirements = conn.execute(
-                "SELECT * FROM queue_tokens WHERE id=%s AND department_id=%s AND status='waiting'",
-                (target, body.department_id),
+                "SELECT t.* FROM queue_tokens t WHERE t.id=%s AND t.department_id=%s AND t.status='waiting'"
+                + DOCTOR_QUEUE_FILTER,
+                (target, body.department_id, doctor_id, doctor_id),
             ).fetchone()
             if not requirements:
                 raise ServiceError(404, 'Waiting token not found in this department.')
@@ -306,7 +311,8 @@ def patient_doctors(settings, key):
         )
 
 
-def balance(settings, department_id):
+def balance(settings, department_id, user):
+    authorize(user, 'queue:balance')
     with connection(settings) as conn:
         clinic = department(conn, department_id)
         tokens = waiting(conn, department_id)
@@ -350,7 +356,7 @@ def balance(settings, department_id):
 def demand(
     settings, department_id, day, weeks, target_utilization, clearance_minutes, user
 ):
-    require(user, MANAGERS)
+    authorize(user, 'analytics:read')
     with connection(settings) as conn:
         return forecast(
             conn, department_id, day, weeks, target_utilization, clearance_minutes
@@ -358,12 +364,12 @@ def demand(
 
 
 def what_if(body, user):
-    require(user, MANAGERS)
+    authorize(user, 'analytics:read')
     return compare(body)
 
 
 def profile(settings, staff_id, body, user):
-    require(user, ('admin',))
+    authorize(user, 'doctor:manage')
     if not set(body.service_types) <= {
         'general_consultation',
         'follow_up',

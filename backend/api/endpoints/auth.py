@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
+from backend.core.authorization import authorize
 from backend.api.cookies import clear_session_cookie, set_session_cookies
 from backend.api.dependencies import AppSettings, CurrentUser
 from backend.core.errors import ServiceError
@@ -71,6 +72,7 @@ def demo_login(
 
 @router.get('/auth/me', response_model=Session, response_model_exclude_none=True)
 def me(user: CurrentUser):
+    authorize(user, 'account:self')
     return user
 
 
@@ -80,6 +82,7 @@ def me(user: CurrentUser):
     response_model_exclude_none=True,
 )
 def workspace(role: Role, user: CurrentUser):
+    authorize(user, 'account:self')
     if user['role'] != role:
         raise ServiceError(403, 'You do not have access to this workspace.')
     return {'user': user, 'workspace': WORKSPACES[role]}

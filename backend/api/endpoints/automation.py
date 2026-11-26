@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter
 
 from backend import automation
+from backend.core.authorization import authorize
 from backend.api.dependencies import AppSettings, CurrentUser
 
 router = APIRouter()
@@ -14,6 +15,7 @@ router = APIRouter()
 def warnings(
     settings: AppSettings, user: CurrentUser, department_id: uuid.UUID | None = None
 ):
+    authorize(user, 'alerts:read')
     return automation.warnings(settings, department_id)
 
 

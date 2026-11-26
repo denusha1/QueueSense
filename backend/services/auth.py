@@ -26,6 +26,7 @@ class StaffSession(TypedDict):
     expires_at: datetime
     session_id: UUID
     access_expires_at: NotRequired[datetime]
+    permissions: NotRequired[list[str]]
 
 
 @dataclass(frozen=True, repr=False)

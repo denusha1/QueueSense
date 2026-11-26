@@ -25,10 +25,20 @@ export function proxyError(requestId: string, status: number, message: string) {
 
 export function allowedOrigin(request: NextRequest) {
   const origin = request.headers.get('origin') ?? '';
-  const allowed = (process.env.FRONTEND_ORIGINS ?? 'http://127.0.0.1:3001,http://localhost:3001')
-    .split(',').map(value => value.trim());
+  const configured = process.env.FRONTEND_ORIGINS ?? 'http://127.0.0.1:3001,http://localhost:3001';
   try {
-    return allowed.includes(origin) && new URL(origin).host === request.headers.get('host');
+    const url = new URL(origin);
+    if (!['https:', 'http:'].includes(url.protocol) || origin !== url.origin
+        || url.host !== request.headers.get('host')) return false;
+    return configured.split(',').some(entry => {
+      const value = entry.trim();
+      if (!/^https?:\/\/[^/?#@\s\\*]+\/?$/i.test(value)) return false;
+      try {
+        return new URL(value).origin === origin;
+      } catch {
+        return false;
+      }
+    });
   } catch {
     return false;
   }
@@ -61,7 +71,12 @@ export async function forwardApi(
   url: string,
   requestId: string,
   body: string | undefined,
-  options: { timeoutMs: number; service: 'auth' | 'service'; stream?: boolean; forwardRefresh?: boolean },
+  options: {
+    timeoutMs: number;
+    service: 'auth' | 'service';
+    responseType?: 'stream' | 'qr' | 'report';
+    forwardRefresh?: boolean;
+  },
 ) {
   const deadline = AbortSignal.timeout(options.timeoutMs);
   try {
@@ -82,11 +97,19 @@ export async function forwardApi(
       redirect: 'error',
       signal: AbortSignal.any([request.signal, deadline]),
     });
-    if (upstream.status >= 400 && !upstream.headers.get('Content-Type')?.startsWith('application/json')) {
-      // Fail closed if a hosting hop returns an HTML error page.
+    const mediaType = upstream.headers.get('Content-Type')?.split(';', 1)[0].trim().toLowerCase();
+    const bodyless = [204, 205, 304].includes(upstream.status);
+    const allowedTypes = upstream.ok && options.responseType
+      ? {
+          stream: ['text/event-stream'],
+          qr: ['image/svg+xml'],
+          report: ['text/csv', 'application/pdf'],
+        }[options.responseType]
+      : ['application/json'];
+    if (!bodyless && (!mediaType || !allowedTypes.includes(mediaType))) {
       await upstream.body?.cancel();
       if (upstream.status === 504) return proxyError(requestId, 504, 'The service took too long to respond.');
-      throw new Error('Unexpected upstream error format');
+      throw new Error('Unexpected upstream response type');
     }
     const responseHeaders = new Headers({ 'Cache-Control': noStore, [requestIdHeader]: requestId });
     for (const name of ['Content-Type', 'Content-Disposition', 'Allow', 'Retry-After']) {
@@ -96,13 +119,13 @@ export async function forwardApi(
     if (options.service === 'auth') {
       for (const cookie of upstream.headers.getSetCookie()) responseHeaders.append('Set-Cookie', cookie);
     }
-    if (options.stream && upstream.ok) {
+    if (options.responseType === 'stream' && upstream.ok && !bodyless) {
       responseHeaders.set('Content-Type', 'text/event-stream');
-      responseHeaders.set('Cache-Control', 'no-cache, no-transform');
+      responseHeaders.set('Cache-Control', 'no-store, no-transform');
       responseHeaders.set('X-Accel-Buffering', 'no');
       return new NextResponse(upstream.body, { headers: responseHeaders });
     }
-    const payload = [204, 205, 304].includes(upstream.status) ? null : await upstream.arrayBuffer();
+    const payload = bodyless ? null : await upstream.arrayBuffer();
     return new NextResponse(payload, { status: upstream.status, headers: responseHeaders });
   } catch {
     if (!request.signal.aborted) {

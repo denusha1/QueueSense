@@ -125,3 +125,10 @@ Not executed here: Docker build/Compose, hosted CI run, cloud deployment or real
 
 - Board cards now use shared page controls, showing ten filtered tokens per page. Controls appear only above ten results, preserve patient links/actions, reset on department/search/status/order changes, and retain/clamp the selected page during live refreshes. The existing board endpoint's 500-token limit remains.
 - Production build/TypeScript and extended `pagination.cjs` passed. Browser coverage includes 24 active cards over three pages, page-two private links, filter/search resets, shrinking to 11/10/0 records, page clamping, empty states, and mobile Previous/Next controls without horizontal overflow. Existing live, sample and analytics table pagination passed in the same run. Local frontend restarted on port 3002.
+
+## Enterprise authorization and API hardening
+
+- Native PostgreSQL verification passed all 138 backend tests on 25 November 2026. This also verified migration 017, migration re-run, data integrity and restricted runtime database grants. PGlite verified migrations 001 through 017, historical record preservation, KPI parity, constraints and rollback.
+- Next.js 16.4.6 built successfully and passed TypeScript checking. Eight Playwright checks passed across product views, arrivals, core queue, planning, v1 runtime credentials, proxy errors, JWT renewal and operations/reporting. The browser runs used the locally cached Chromium headless build 1254 with Playwright 1.63.0 because the matching build download was still in progress.
+- A separate local fixture confirmed both Next.js proxies reject an upstream HTTP 200 HTML response and allow QR SVG with the API content policy. The proxy error regression now runs in CI when the workflow is executed.
+- After updating the affected packages, npm and PyPI scans reported zero advisories for the frontend, database test and backend lockfiles. See the [security audit](SECURITY_AUDIT.md) for scope and remaining risks.

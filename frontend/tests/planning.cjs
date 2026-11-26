@@ -72,6 +72,7 @@ const base=process.env.BASE_URL||'http://127.0.0.1:3002';
    await rolePage.getByRole('heading',{name:'Smart doctor recommendation'}).waitFor();
    assert.equal(await rolePage.getByRole('button',{name:'Forecast demand & staffing'}).count(),role==='manager'?1:0);
    assert.equal(await rolePage.getByRole('button',{name:'Save doctor profile'}).count(),0);
+   assert.equal(await rolePage.getByRole('heading',{name:'Intelligent load balancing'}).count(),role==='reception'?1:0);
    await roleContext.close();
   }
   assert.deepEqual(errors,[]);

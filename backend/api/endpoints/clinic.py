@@ -5,6 +5,7 @@ from datetime import date
 
 from fastapi import APIRouter, Query
 
+from backend.core.authorization import authorize
 from backend.api.dependencies import AppSettings, CurrentUser
 from backend.schemas.product import (
     DepartmentInput,
@@ -21,12 +22,13 @@ router = APIRouter()
 
 @router.get('/departments')
 def departments(settings: AppSettings, user: CurrentUser):
+    authorize(user, 'department:read')
     return clinic.departments(settings)
 
 
 @router.get('/staff')
 def staff(settings: AppSettings, user: CurrentUser):
-    return clinic.staff(settings)
+    return clinic.staff(settings, user)
 
 
 @router.get('/admin/users')
@@ -68,6 +70,7 @@ def add_staff(settings: AppSettings, user: CurrentUser, body: StaffInput):
 
 @router.get('/schedules')
 def schedules(settings: AppSettings, user: CurrentUser, start: date, end: date):
+    authorize(user, 'doctor:read')
     return clinic.schedules(settings, start, end)
 
 

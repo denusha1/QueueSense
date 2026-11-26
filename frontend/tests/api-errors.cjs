@@ -23,6 +23,18 @@ const baseURL = process.env.BASE_URL || 'http://127.0.0.1:3001';
 
     await verify(await client.get('/api/auth/unknown'), 404, 'not_found');
     await verify(await client.post('/api/service/patients', { data: {} }), 403, 'forbidden');
+    await verify(await client.post('/api/service/patients', {
+      headers: { Origin: 'https://outside.example.test' }, data: {},
+    }), 403, 'forbidden');
+    const preflight = await client.fetch('/api/service/patients', {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://outside.example.test', 'Access-Control-Request-Method': 'POST' },
+    });
+    assert.equal(preflight.headers()['access-control-allow-origin'], undefined);
+    const page = await client.get('/patient/nonexistent');
+    assert.match(page.headers()['content-security-policy'], /frame-ancestors 'none'/);
+    assert.match(page.headers()['content-security-policy'], /form-action 'self'/);
+    assert.equal(page.headers()['x-powered-by'], undefined);
     await verify(await client.post('/api/auth/login', {
       headers: origin, data: 'x'.repeat(4097),
     }), 413, 'request_too_large');
@@ -42,6 +54,7 @@ const baseURL = process.env.BASE_URL || 'http://127.0.0.1:3001';
     const demo = await client.get('/api/auth/demo');
     assert.equal(demo.status(), 200);
     assert.match(demo.headers()['x-request-id'], /^[a-f0-9-]{36}$/);
+    assert.match(demo.headers()['content-security-policy'], /default-src 'none'/);
     console.log('PASS: proxy-generated and upstream API errors preserve request correlation and redact input.');
   } finally {
     await client.dispose();

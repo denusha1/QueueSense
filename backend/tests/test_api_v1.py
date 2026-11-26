@@ -311,7 +311,7 @@ def test_v1_masks_database_and_internal_failures(
     failure, status, code, monkeypatch, caplog
 ):
     app = create_app(Settings('unused', (ORIGIN,), automation_enabled=False))
-    app.dependency_overrides[current_staff] = lambda: {'role': 'admin'}
+    app.dependency_overrides[current_staff] = lambda: {'role': 'admin', 'permissions': ['queue:read']}
 
     def unavailable(*_args):
         raise failure('private response details')

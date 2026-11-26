@@ -1,7 +1,6 @@
 """Application use cases for queue operations."""
 
 import secrets
-import time
 from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
@@ -10,22 +9,22 @@ from zoneinfo import ZoneInfo
 
 from psycopg.errors import UniqueViolation
 
+from backend.core.authorization import authorize, queue_doctor
 from backend.core.config import CLINIC_TIMEZONE as TZ
 from backend.core.config import Settings
 from backend.core.errors import ServiceError
-from backend.core.security import OPS, require, valid_private_key
+from backend.core.security import valid_private_key
 from backend.database import DatabaseConnection, Row, connection, read_snapshot
 from backend.planning import eligible
 from backend.repositories import clinicians
 from backend.repositories import queue as repository
 from backend.repositories.audit import audit
-from backend.repositories.permissions import require_permission
 from backend.schemas.product import Availability, Change, StaffCheckIn
 from backend.services.auth import StaffSession
 from backend.services.clinic import station
 from backend.services.patients import validate_link
 from backend.services.qr import render_qr
-from backend.services.queue_views import decorate_queue_rows
+from backend.services.queue_views import decorate_staff_queue_rows
 
 TRANSITIONS = {
     'waiting': ['called', 'cancelled'],
@@ -121,16 +120,23 @@ def issue_token(
 
 
 def transition(
-    conn: DatabaseConnection, token_id: UUID, body: Change, user: StaffSession
+    conn: DatabaseConnection, token_id: UUID, body: Change, user: StaffSession,
+    *, call_next_claim: bool = False,
 ) -> Row:
     repository.lock_queue_writes(conn)
     token = repository.lock_token(conn, token_id)
     if not token:
         raise ServiceError(404, 'Token not found.')
+    doctor_id = queue_doctor(user)
+    if doctor_id and not (
+        (call_next_claim and token['staff_id'] is None and body.status == 'called')
+        or repository.staff_queue_record(conn, token_id, doctor_id)
+    ):
+        raise ServiceError(404, 'Token not found.')
     if body.status not in TRANSITIONS.get(token['status'], []):
         raise ServiceError(409, 'This queue transition is not allowed.')
     staff_id = body.staff_id if body.status == 'called' else token['staff_id']
-    if user['role'] == 'doctor' and staff_id is None:
+    if doctor_id and staff_id is None:
         raise ServiceError(403, 'An assigned clinician is required.')
     if staff_id:
         clinician = station(conn, staff_id, user)
@@ -181,22 +187,25 @@ def transition(
             'staff_id': str(staff_id) if staff_id else None,
         },
     )
-    return {
-        key: value
-        for key, value in row.items()
-        if key not in ('public_key', 'patient_id')
-    }
+    private_fields = {'public_key', 'patient_id'}
+    if doctor_id:
+        private_fields.update({'priority_reason', 'synthetic_patient_id', 'source'})
+    return {key: value for key, value in row.items() if key not in private_fields}
 
 
-def live(settings: Settings, department: UUID | None):
+def live(settings: Settings, department: UUID | None, user: StaffSession):
+    authorize(user, 'queue:read')
+    doctor_id = queue_doctor(user)
     with connection(settings) as conn:
-        rows = decorate_queue_rows(conn, repository.live_tokens(conn, department))
+        rows = decorate_staff_queue_rows(
+            conn, repository.live_tokens(conn, department, doctor_id), doctor_id
+        )
         return dict(tokens=rows, as_of=datetime.now(TZ), limit=500)
 
 
 def checkin(settings: Settings, body: StaffCheckIn, user: StaffSession) -> Row:
+    authorize(user, 'queue:create')
     with connection(settings) as conn:
-        require_permission(conn, user['id'], 'queue:check_in')
         token = issue_token(
             conn,
             body.department_id,
@@ -209,7 +218,7 @@ def checkin(settings: Settings, body: StaffCheckIn, user: StaffSession) -> Row:
 
 
 def private_link(settings: Settings, token_id: UUID, user: StaffSession):
-    require(user, ('admin', 'reception'))
+    authorize(user, 'queue:links')
     with connection(settings) as conn:
         row = repository.public_key(conn, token_id)
         if not row:
@@ -218,13 +227,13 @@ def private_link(settings: Settings, token_id: UUID, user: StaffSession):
 
 
 def change(settings: Settings, token_id: UUID, body: Change, user: StaffSession) -> Row:
-    require(user, OPS)
+    authorize(user, 'queue:update')
     with connection(settings) as conn:
         return transition(conn, token_id, body, user)
 
 
 def call_next(settings: Settings, staff_id: UUID, user: StaffSession) -> Row:
-    require(user, OPS)
+    authorize(user, 'queue:update')
     with connection(settings) as conn:
         repository.lock_queue_writes(conn)
         clinician = station(conn, staff_id, user)
@@ -233,14 +242,15 @@ def call_next(settings: Settings, staff_id: UUID, user: StaffSession) -> Row:
         if not row:
             raise ServiceError(409, 'No eligible patients waiting for this doctor.')
         return transition(
-            conn, row['id'], Change(status='called', staff_id=staff_id), user
+            conn, row['id'], Change(status='called', staff_id=staff_id), user,
+            call_next_claim=True,
         )
 
 
 def availability(
     settings: Settings, staff_id: UUID, body: Availability, user: StaffSession
 ):
-    require(user, OPS)
+    authorize(user, 'queue:update')
     with connection(settings) as conn:
         repository.lock_queue_writes(conn)
         station(conn, staff_id, user)
@@ -257,7 +267,7 @@ def availability(
 
 
 def close_session(settings: Settings, department_id: UUID, user: StaffSession):
-    require(user, ('admin', 'reception'))
+    authorize(user, 'queue:close')
     with connection(settings) as conn:
         repository.lock_queue_writes(conn)
         row = conn.execute(
@@ -292,12 +302,7 @@ def tracking_qr(settings: Settings, key: str, origin: str) -> str:
     return render_qr(origin + '/patient/' + key)
 
 
-def patient(settings: Settings, key: str, public_hits: list[float]):
-    now = time.monotonic()
-    public_hits[:] = [stamp for stamp in public_hits if now - stamp < 60]
-    if len(public_hits) >= 600:
-        raise ServiceError(429, 'Please retry shortly.')
-    public_hits.append(now)
+def patient(settings: Settings, key: str):
     if not valid_private_key(key):
         raise ServiceError(404, 'Token not found.')
     with connection(settings) as conn:
@@ -339,21 +344,24 @@ def patient(settings: Settings, key: str, public_hits: list[float]):
         )
 
 
-def list_records(settings: Settings, query):
+def list_records(settings: Settings, query, user: StaffSession):
+    authorize(user, 'queue:read')
     with read_snapshot(settings) as conn:
-        return repository.staff_queue_page(conn, query)
+        return repository.staff_queue_page(conn, query, queue_doctor(user))
 
 
-def get_record(settings: Settings, token_id: UUID):
+def get_record(settings: Settings, token_id: UUID, user: StaffSession):
+    authorize(user, 'queue:read')
     with connection(settings) as conn:
-        row = repository.staff_queue_record(conn, token_id)
+        row = repository.staff_queue_record(conn, token_id, queue_doctor(user))
         if not row:
             raise ServiceError(404, 'Token not found.')
         return row
 
 
-def history(settings: Settings, token_id: UUID, limit: int, offset: int):
+def history(settings: Settings, token_id: UUID, limit: int, offset: int, user: StaffSession):
+    authorize(user, 'queue:read')
     with read_snapshot(settings) as conn:
-        if not repository.staff_queue_record(conn, token_id):
+        if not repository.staff_queue_record(conn, token_id, queue_doctor(user)):
             raise ServiceError(404, 'Token not found.')
         return repository.staff_queue_history(conn, token_id, limit, offset)

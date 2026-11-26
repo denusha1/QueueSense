@@ -10,7 +10,7 @@ Choose **Admin → Explore the demo → Enter admin demo** for all features. Rec
 
 The full workspace includes live queue, patient check-in/status, department queue board, clinician availability/schedules, manager analytics, department/workload/peak-hour analysis, model performance, staffing simulation, alerts, CSV import, CSV/PDF reports, user/department administration and audit history. See the [delivery matrix and review guide](docs/DELIVERY.md).
 
-Portfolio review materials: [walkthrough and screenshots](docs/PORTFOLIO.md), [architecture](docs/architecture/system.md), [security review](docs/SECURITY_REVIEW.md), [backup/restore runbook](docs/BACKUP_RESTORE.md), and [staff/student usability review plan](docs/USABILITY_REVIEW.md). Real participant feedback is pending; the usability review document includes a session guide and findings log.
+Portfolio review materials: [walkthrough and screenshots](docs/PORTFOLIO.md), [architecture](docs/architecture/system.md), [security audit](docs/SECURITY_AUDIT.md), [backup/restore runbook](docs/BACKUP_RESTORE.md), and [staff/student usability review plan](docs/USABILITY_REVIEW.md). Real participant feedback is pending; the usability review document includes a session guide and findings log.
 
 ## Product tour
 

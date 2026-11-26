@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: QueueSense Waiting Time — Private Preview
+  version: 1.0.0
+  description: Curated contract for import review and synthetic origin testing. Partner
+    OAuth and gateway-to-origin authorization are pending. Keep this preview out of
+    the Developer Portal.
+servers:
+- url: /api/v1/analytics
+  description: Relative private FastAPI origin base path
+paths:
+  /waiting-time:
+    get:
+      tags:
+      - v1 analytics
+      summary: Get aggregate waiting-time statistics
+      operationId: getWaitingTimeSummary
+      security:
+      - QueueSenseAccessJWT: []
+      parameters:
+      - name: start
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          title: Start
+      - name: end
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          title: End
+      - name: department_id
+        in: query
+        required: false
+        schema:
+          title: Department Id
+          type: string
+          format: uuid
+      - name: staff_id
+        in: query
+        required: false
+        schema:
+          title: Staff Id
+          type: string
+          format: uuid
+      - name: weekday
+        in: query
+        required: false
+        schema:
+          title: Weekday
+          type: integer
+          maximum: 7
+          minimum: 1
+      - name: hour_from
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 23
+          minimum: 0
+          default: 0
+          title: Hour From
+      - name: hour_to
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 23
+          minimum: 0
+          default: 23
+          title: Hour To
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Data_WaitingTime_'
+              example:
+                data:
+                  measured_waits: 42
+                  average_wait: 14.2
+                  median_wait: 12
+                  p90_wait: 25
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+        '400':
+          description: Malformed request
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Valid staff session required
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            WWW-Authenticate:
+              schema:
+                type: string
+              example: Bearer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Origin or operation forbidden
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Invalid request
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Unexpected server failure
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Backend temporarily unavailable
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '504':
+          description: Operation timed out
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      description: This private preview requires an Admin or Manager staff access
+        JWT. Start and end are inclusive clinic dates, at most 366 days apart. Hours
+        use department-local time and weekday uses ISO 1–7. Waiting times are minutes.
+        When there are no measured waits, the count is zero and the statistics are
+        null.
+components:
+  securitySchemes:
+    QueueSenseAccessJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      properties:
+        success:
+          type: boolean
+          enum:
+          - false
+          title: Success
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+        request_id:
+          type: string
+          format: uuid
+          title: Request Id
+      type: object
+      required:
+      - success
+      - error
+      - request_id
+      title: ApiError
+    Data_WaitingTime_:
+      properties:
+        data:
+          $ref: '#/components/schemas/WaitingTime'
+      type: object
+      required:
+      - data
+      title: Data[WaitingTime]
+    ErrorDetail:
+      properties:
+        code:
+          type: string
+          title: Code
+        message:
+          type: string
+          title: Message
+        details:
+          items:
+            $ref: '#/components/schemas/ValidationIssue'
+          type: array
+          title: Details
+      type: object
+      required:
+      - code
+      - message
+      title: ErrorDetail
+    ValidationIssue:
+      properties:
+        field:
+          type: string
+          title: Field
+        code:
+          type: string
+          title: Code
+      type: object
+      required:
+      - field
+      - code
+      title: ValidationIssue
+    WaitingTime:
+      properties:
+        measured_waits:
+          type: integer
+          title: Measured Waits
+        average_wait:
+          type: number
+          nullable: true
+          title: Average Wait
+        median_wait:
+          type: number
+          nullable: true
+          title: Median Wait
+        p90_wait:
+          type: number
+          nullable: true
+          title: P90 Wait
+      type: object
+      required:
+      - measured_waits
+      - average_wait
+      - median_wait
+      - p90_wait
+      title: WaitingTime

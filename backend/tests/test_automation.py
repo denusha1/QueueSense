@@ -115,9 +115,12 @@ def test_staff_receipts_are_personal_and_risk_role_access(client,clinic,test_url
     notice=client.get('/notifications').json()[0]
     assert post(client,'/notifications/'+notice['id']+'/read').status_code==200
     assert next(n for n in client.get('/notifications').json() if n['id']==notice['id'])['is_read']
+    assert notice['kind']=='no_show_risk'
     login(client,'manager')
-    assert not next(n for n in client.get('/notifications').json() if n['id']==notice['id'])['is_read']
+    assert all(n['id']!=notice['id'] for n in client.get('/notifications').json())
+    assert post(client,'/notifications/'+notice['id']+'/read').status_code==404
     assert client.get('/appointments/risks?day='+now.date().isoformat()).status_code==403
     login(client,'reception')
+    assert not next(n for n in client.get('/notifications').json() if n['id']==notice['id'])['is_read']
     assert client.get('/appointments/risks?day=bad').status_code==422
     assert client.get('/planning/congestion').status_code==200

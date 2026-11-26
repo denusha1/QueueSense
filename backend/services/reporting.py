@@ -5,9 +5,9 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from backend.core.authorization import authorize
 from backend.core.config import CLINIC_TIMEZONE as TZ
 from backend.core.errors import ServiceError
-from backend.core.security import MANAGERS, require
 from backend.database import connection
 from backend.repositories.audit import audit
 from backend.services.clinic import active_staff, service_estimate
@@ -38,7 +38,7 @@ def simulate(body):
 
 
 def summary(settings, start, end, department, staff, weekday, hour_from, hour_to, user):
-    require(user, MANAGERS)
+    authorize(user, 'analytics:read')
     with connection(settings) as conn:
         return analytics(
             conn, start, end, department, staff, weekday, hour_from, hour_to
@@ -46,12 +46,12 @@ def summary(settings, start, end, department, staff, weekday, hour_from, hour_to
 
 
 def simulation(body, user):
-    require(user, MANAGERS)
+    authorize(user, 'analytics:read')
     return simulate(body)
 
 
 def performance(settings, start, end, department, user):
-    require(user, MANAGERS)
+    authorize(user, 'performance:read')
     path = ROOT / 'ml/evaluation/results.json'
     if not path.exists():
         raise ServiceError(503, 'Train the model before viewing evaluation results.')
@@ -85,7 +85,7 @@ def alerts(settings):
 
 
 def refresh_alerts(settings, user):
-    require(user, MANAGERS)
+    authorize(user, 'alerts:manage')
     with connection(settings) as conn:
         conn.execute('SELECT pg_advisory_xact_lock(72419024)')
         for dep in conn.execute('SELECT * FROM departments WHERE is_active').fetchall():
@@ -152,7 +152,7 @@ def refresh_alerts(settings, user):
 
 
 def resolve_alert(settings, alert_id, user):
-    require(user, MANAGERS)
+    authorize(user, 'alerts:manage')
     with connection(settings) as conn:
         row = conn.execute(
             'UPDATE alerts SET resolved_at=coalesce(resolved_at,now()) WHERE id=%s RETURNING id',
@@ -165,7 +165,7 @@ def resolve_alert(settings, alert_id, user):
 
 
 def import_data(settings, body, user):
-    require(user, MANAGERS)
+    authorize(user, 'data:import')
     from backend.services.importer import import_csv
 
     with connection(settings) as conn:
@@ -188,7 +188,11 @@ def export(
     hour_to,
     user,
 ):
-    require(user, MANAGERS)
+    authorize(user, 'reports:read')
+    if report_type is None:
+        report_type = 'visits' if 'queue:read' in user['permissions'] else 'operational'
+    if report_type == 'visits':
+        authorize(user, 'queue:read')
     from backend.services.reports import render, sections
 
     with connection(settings) as conn:
@@ -247,14 +251,14 @@ def cohort_filters(query):
 
 
 def cohort_metrics(settings, user, query):
-    require(user, MANAGERS)
+    authorize(user, 'analytics:read')
     where, args = cohort_filters(query)
     with connection(settings) as conn:
         return cohort_summary(conn, where, args)
 
 
 def peak_metrics(settings, user, query):
-    require(user, MANAGERS)
+    authorize(user, 'analytics:read')
     where, args = cohort_filters(query)
     with connection(settings) as conn:
         return peak_hours(conn, where, args)

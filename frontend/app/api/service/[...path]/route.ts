@@ -21,8 +21,10 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     return proxyError(requestId, 400, 'Unable to read the request body.');
   }
   if (body === null) return proxyError(requestId, 413, 'Maximum upload is 2 MB.');
+  const responseType = endpoint.endsWith('/events') ? 'stream'
+    : endpoint.endsWith('/qr') ? 'qr' : endpoint === 'reports/export' ? 'report' : undefined;
   return forwardApi(request, `${authApi}/${endpoint}${request.nextUrl.search}`, requestId, body, {
-    timeoutMs: 60_000, service: 'service', stream: endpoint.endsWith('/events'),
+    timeoutMs: 60_000, service: 'service', responseType,
   });
 }
 

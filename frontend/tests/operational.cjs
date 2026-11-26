@@ -19,13 +19,13 @@ const base=process.env.BASE_URL||'http://127.0.0.1:3002';
   await patient.goto(base+'/patient');
   await patient.getByLabel('Private patient link or token key').fill(base+'/patient/'+second.public_key);
   await patient.getByRole('button',{name:'Track my token'}).click();
-  await patient.getByText('1 patient ahead · Queue position 2',{exact:true}).waitFor();
+  await patient.locator('.patient-position').filter({hasText:/^1 patients? ahead\s*·\s*Queue position 2$/}).waitFor();
   assert.equal((await patientContext.request.get(base+'/api/service/queue/live')).status(),401);
   await api('staff/'+clinician.id+'/call-next',{});
   await api('queue/'+first.id+'/status',{status:'in_service'},'PATCH');
-  await patient.getByText('1 patient ahead · Queue position 2',{exact:true}).waitFor();
+  await patient.locator('.patient-position').filter({hasText:/^1 patients? ahead\s*·\s*Queue position 2$/}).waitFor();
   await api('queue/'+first.id+'/status',{status:'completed'},'PATCH');
-  await patient.getByText('0 patients ahead · Queue position 1',{exact:true}).waitFor({timeout:20000});
+  await patient.locator('.patient-position').filter({hasText:/^0 patients ahead\s*·\s*Queue position 1$/}).waitFor({timeout:20000});
   await api('staff/'+clinician.id+'/call-next',{});
   await api('queue/'+second.id+'/status',{status:'in_service'},'PATCH');
   await api('queue/'+second.id+'/status',{status:'completed'},'PATCH');
@@ -70,8 +70,14 @@ const base=process.env.BASE_URL||'http://127.0.0.1:3002';
     await workspace.getByRole('navigation',{name:'Clinic workspace'}).waitFor();
     const expected=role==='manager'?200:403;
     const day=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Colombo'});
-    assert.equal((await context.request.get(base+'/api/service/reports/export?start='+day+'&end='+day)).status(),expected);
+    const report = base+'/api/service/reports/export?start='+day+'&end='+day;
+    assert.equal((await context.request.get(report)).status(),expected);
+    assert.equal((await context.request.get(report+'&report_type=visits')).status(),403);
     assert.equal((await context.request.get(base+'/api/service/audit')).status(),403);
+    if (role === 'manager') {
+     assert.equal(await workspace.getByRole('button',{name:'Live queue',exact:true}).count(),0);
+     assert.equal((await context.request.get(base+'/api/service/queue/live')).status(),403);
+    }
    }finally{await context.close();}
   }
   assert.deepEqual(errors,[]);

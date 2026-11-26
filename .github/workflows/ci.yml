@@ -100,7 +100,7 @@ jobs:
           FRONTEND_ORIGINS: http://127.0.0.1:3001,http://localhost:3001
           AUTH_API_URL: http://127.0.0.1:8001
         run: |
-          nohup python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8001 >/tmp/queuesense-api.log 2>&1 &
+          nohup python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8001 --no-proxy-headers --no-access-log >/tmp/queuesense-api.log 2>&1 &
           nohup npm run start --prefix frontend -- --port 3001 >/tmp/queuesense-frontend.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl --fail --silent http://127.0.0.1:8001/health >/dev/null && curl --fail --silent http://127.0.0.1:3001/ >/dev/null; then exit 0; fi
@@ -109,6 +109,7 @@ jobs:
           cat /tmp/queuesense-api.log /tmp/queuesense-frontend.log
           exit 1
       - run: npm run test:e2e --prefix frontend
+      - run: node frontend/tests/api-errors.cjs
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

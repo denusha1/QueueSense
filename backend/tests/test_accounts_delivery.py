@@ -130,10 +130,10 @@ def test_provider_adapters_use_tls_and_generic_payloads(monkeypatch):
         def __init__(self,host,port,timeout):captured['smtp']=(host,port,timeout)
         def __enter__(self):return self
         def __exit__(self,*args):pass
-        def starttls(self):captured['tls']=True
+        def starttls(self,*,context):captured['tls']=context
         def send_message(self,message):captured['email']=message.get_content()
     monkeypatch.setattr('backend.delivery.smtplib.SMTP',SMTP)
-    send('email','synthetic@example.test');assert captured['tls'] and GENERIC in captured['email']
+    send('email','synthetic@example.test');assert captured['tls'].check_hostname and GENERIC in captured['email']
     monkeypatch.setenv('TWILIO_ACCOUNT_SID','AC'+'0'*32);monkeypatch.setenv('TWILIO_AUTH_TOKEN','synthetic-test');monkeypatch.setenv('TWILIO_FROM','+15555550000')
     class HTTP:
         def __init__(self,timeout,follow_redirects):assert timeout==8 and not follow_redirects

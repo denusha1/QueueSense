@@ -19,16 +19,23 @@ PRIORITY_ORDER = (
 )
 
 
-def live_tokens(conn: DatabaseConnection, department):
+DOCTOR_QUEUE_FILTER = """ AND (%s::uuid IS NULL OR EXISTS (
+    SELECT 1 FROM staff own WHERE own.id=t.staff_id AND own.user_id=%s
+    AND own.is_active AND own.staff_type='doctor'
+))"""
+
+
+def live_tokens(conn: DatabaseConnection, department, doctor_id):
     return conn.execute(
         LIVE_FIELDS
         + LIVE_JOINS
         + ' WHERE '
         + LIVE_FILTER
+        + DOCTOR_QUEUE_FILTER
         + ' ORDER BY '
         + PRIORITY_ORDER
         + ' LIMIT 500',
-        (department, department),
+        (department, department, doctor_id, doctor_id),
     ).fetchall()
 
 
@@ -148,7 +155,7 @@ QUEUE_ORDERS = {
 }
 
 
-def staff_queue_page(conn: DatabaseConnection, query):
+def staff_queue_page(conn: DatabaseConnection, query, doctor_id):
     where = (
         's.service_date=coalesce(%s::date,(now() AT TIME ZONE d.timezone)::date) '
         'AND (%s::uuid IS NULL OR t.department_id=%s) '
@@ -162,10 +169,12 @@ def staff_queue_page(conn: DatabaseConnection, query):
         query.staff_id,
         query.status,
         query.status,
+        doctor_id,
+        doctor_id,
     )
     source = (
         ' FROM queue_tokens t JOIN queue_sessions s ON s.id=t.session_id '
-        'JOIN departments d ON d.id=t.department_id WHERE ' + where
+        'JOIN departments d ON d.id=t.department_id WHERE ' + where + DOCTOR_QUEUE_FILTER
     )
     total = conn.execute('SELECT count(*) AS n' + source, params).fetchone()['n']
     rows = conn.execute(
@@ -180,10 +189,11 @@ def staff_queue_page(conn: DatabaseConnection, query):
     return rows, total
 
 
-def staff_queue_record(conn: DatabaseConnection, token_id):
+def staff_queue_record(conn: DatabaseConnection, token_id, doctor_id):
     return conn.execute(
-        'SELECT ' + QUEUE_RECORD_FIELDS + ' FROM queue_tokens t WHERE t.id=%s',
-        (token_id,),
+        'SELECT ' + QUEUE_RECORD_FIELDS + ' FROM queue_tokens t WHERE t.id=%s'
+        + DOCTOR_QUEUE_FILTER,
+        (token_id, doctor_id, doctor_id),
     ).fetchone()
 
 

@@ -3,10 +3,17 @@
 from backend.database import DatabaseConnection
 
 
+STAFF_SESSION_SELECT = (
+    'SELECT u.id::text,u.email,u.role,s.expires_at,s.id AS session_id,'
+    'ARRAY(SELECT rp.permission_code FROM role_permissions rp WHERE rp.role_code=u.role) AS permissions '
+    'FROM auth_sessions s '
+)
+
+
 def active_session(conn: DatabaseConnection, token_hash: str):
     return conn.execute(
-        'SELECT u.id::text, u.email, u.role, s.expires_at, s.id AS session_id FROM auth_sessions s '
-        'JOIN users u ON u.id=s.user_id '
+        STAFF_SESSION_SELECT
+        + 'JOIN users u ON u.id=s.user_id '
         "WHERE s.token_hash=%s AND s.auth_mode='opaque' AND s.expires_at > now() AND u.is_active",
         (token_hash,),
     ).fetchone()
@@ -97,8 +104,8 @@ def rotate_active_session(
 
 def active_jwt_session(conn: DatabaseConnection, session_id, user_id):
     return conn.execute(
-        'SELECT u.id::text, u.email, u.role, s.expires_at, s.id AS session_id FROM auth_sessions s '
-        'JOIN users u ON u.id=s.user_id '
+        STAFF_SESSION_SELECT
+        + 'JOIN users u ON u.id=s.user_id '
         "WHERE s.id=%s AND u.id=%s AND s.auth_mode='jwt' AND s.expires_at>now() AND u.is_active",
         (session_id, user_id),
     ).fetchone()

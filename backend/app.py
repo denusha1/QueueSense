@@ -7,6 +7,7 @@ from backend.api.middleware import headers_and_origin
 from backend.api.router import router
 from backend.automation import lifespan
 from backend.core.config import Settings as Settings
+from backend.core.rate_limit import SlidingWindowLimiter
 from backend.core.security import COOKIE as COOKIE
 from backend.core.security import HASHER as HASHER
 from backend.core.security import digest as digest
@@ -24,7 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app = FastAPI(title='QueueSense API', version='1.0.0', lifespan=lifespan, **docs)
     app.state.settings = settings
-    app.state.public_status_hits = []
+    app.state.public_status_limiter = SlidingWindowLimiter(limit=600, window_seconds=60)
     app.middleware('http')(headers_and_origin)
     register_exception_handlers(app)
     app.include_router(router)
