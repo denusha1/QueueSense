@@ -1,5 +1,7 @@
 # Portfolio materials
 
+For the final portfolio review, use the [internship contribution report](CHOREO_INTERNSHIP_CONTRIBUTION_REPORT.md), [four-minute script](DEMO_VIDEO_SCRIPT.md), and [technical interview guide](TECHNICAL_INTERVIEW_GUIDE.md).
+
 ## Project description
 
 QueueSense is a full-stack patient-flow analytics platform that turns synthetic queue events into operational visibility. Next.js and FastAPI support role-specific check-in/service workflows, PostgreSQL enforces queue consistency, SQL powers filtered analytics, and an evaluated waiting-time model provides check-in estimates. It is an operational portfolio demonstration, not medical advice or a real hospital deployment.
@@ -9,6 +11,9 @@ QueueSense is a full-stack patient-flow analytics platform that turns synthetic 
 - Built a Next.js/FastAPI/PostgreSQL patient-flow application with role-checked queue transitions, private token tracking, clinician scheduling and administrative audit history.
 - Implemented filtered SQL analytics, validated synthetic CSV imports, CSV/PDF exports, congestion rules and a deterministic staffing simulator.
 - Replayed historical events to build prior-only features and evaluated linear/tree regressors on chronological holdout data; the selected Random Forest achieved 7.10-minute MAE versus a 9.62-minute operational baseline on synthetic test visits.
+
+- Designed a single-operation partner API for Choreo API Management. Implemented and verified the local HTTPS/mTLS origin, signed assertion checks, department scope, quota behavior and OpenAPI contract.
+- Ran mixed synthetic Locust workloads at 10, 50 and 100 users. Measured a drop in aggregate p95 from 60 ms to 44 ms at 100 users and documented the token issuance p99 regression.
 
 ## Interview walkthrough
 

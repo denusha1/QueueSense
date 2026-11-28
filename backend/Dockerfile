@@ -1,7 +1,15 @@
-FROM python:3.12-slim
-WORKDIR /workspace
+FROM python:3.12-slim AS dependencies
+ENV VIRTUAL_ENV=/opt/venv
+RUN python -m venv "$VIRTUAL_ENV"
 COPY backend/requirements.lock /tmp/requirements.lock
-RUN pip install --no-cache-dir -r /tmp/requirements.lock
+RUN /opt/venv/bin/pip install --no-cache-dir --timeout 60 --retries 6 -r /tmp/requirements.lock
+
+FROM python:3.12-slim AS runtime
+ENV PATH="/opt/venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /workspace
+COPY --from=dependencies /opt/venv /opt/venv
 COPY backend /workspace/backend
 COPY ml /workspace/ml
 RUN useradd --create-home --uid 10001 --user-group queuesense

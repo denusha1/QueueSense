@@ -20,16 +20,22 @@ JOIN departments d ON d.id=t.department_id LEFT JOIN staff st ON st.id=t.staff_i
 WAIT = 'extract(epoch FROM (t.service_start_at-t.check_in_at))/60.0'
 SERVICE = 'extract(epoch FROM (t.completed_at-t.service_start_at))/60.0'
 
-AGGREGATES = f'''count(*) AS arrivals, count(*) FILTER(WHERE t.status='completed') AS completed,
-count(*) FILTER(WHERE t.status='waiting') AS waiting, count(*) FILTER(WHERE t.status='cancelled') AS cancelled,
-count(*) FILTER(WHERE t.status='no_show') AS no_shows, count(t.service_start_at) AS measured_waits, avg({WAIT}) AS average_wait,
+WAIT_AGGREGATES = f"""count(t.service_start_at) AS measured_waits, avg({WAIT}) AS average_wait,
 percentile_cont(.5) WITHIN GROUP(ORDER BY {WAIT}) AS median_wait,
-percentile_cont(.9) WITHIN GROUP(ORDER BY {WAIT}) AS p90_wait, avg({SERVICE}) AS average_service,
-100.0*count(*) FILTER(WHERE t.status='cancelled' AND s.closed_at IS NOT NULL)/nullif(count(*) FILTER(WHERE s.closed_at IS NOT NULL),0) AS cancellation_rate,
-100.0*count(*) FILTER(WHERE t.status='no_show' AND s.closed_at IS NOT NULL)/nullif(count(*) FILTER(WHERE s.closed_at IS NOT NULL),0) AS no_show_rate'''
+percentile_cont(.9) WITHIN GROUP(ORDER BY {WAIT}) AS p90_wait"""
 
-def cohort_summary(conn, where, args):
-    return conn.execute('SELECT ' + AGGREGATES + BASE + where, args).fetchone()
+PERFORMANCE_AGGREGATES = f"""count(*) AS arrivals, count(*) FILTER(WHERE t.status='completed') AS completed,
+count(*) FILTER(WHERE t.status='waiting') AS waiting, count(*) FILTER(WHERE t.status='cancelled') AS cancelled,
+count(*) FILTER(WHERE t.status='no_show') AS no_shows, avg({SERVICE}) AS average_service,
+100.0*count(*) FILTER(WHERE t.status='cancelled' AND s.closed_at IS NOT NULL)/nullif(count(*) FILTER(WHERE s.closed_at IS NOT NULL),0) AS cancellation_rate,
+100.0*count(*) FILTER(WHERE t.status='no_show' AND s.closed_at IS NOT NULL)/nullif(count(*) FILTER(WHERE s.closed_at IS NOT NULL),0) AS no_show_rate"""
+
+AGGREGATES = PERFORMANCE_AGGREGATES + ',' + WAIT_AGGREGATES
+
+
+def cohort_summary(conn, where, args, *, projection=AGGREGATES):
+    # Projection comes from the static application aggregates above.
+    return conn.execute('SELECT ' + projection + BASE + where, args).fetchone()
 
 
 def peak_hours(conn, where, args):

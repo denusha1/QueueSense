@@ -14,6 +14,7 @@ from backend.schemas.v1 import (
     WaitingTime,
 )
 from backend.services import reporting
+from backend.services.metrics import PERFORMANCE_AGGREGATES, WAIT_AGGREGATES
 
 router = APIRouter(prefix='/analytics', tags=['v1 analytics'])
 
@@ -22,7 +23,9 @@ router = APIRouter(prefix='/analytics', tags=['v1 analytics'])
 def waiting_time(
     query: Annotated[AnalyticsQuery, Query()], settings: AppSettings, user: V1User
 ):
-    return {'data': reporting.cohort_metrics(settings, user, query)}
+    return {
+        'data': reporting.cohort_metrics(settings, user, query, projection=WAIT_AGGREGATES),
+    }
 
 
 @router.get('/peak-hours', response_model=Data[list[PeakHour]])
@@ -36,4 +39,6 @@ def peak_hours(
 def queue_performance(
     query: Annotated[AnalyticsQuery, Query()], settings: AppSettings, user: V1User
 ):
-    return {'data': reporting.cohort_metrics(settings, user, query)}
+    return {
+        'data': reporting.cohort_metrics(settings, user, query, projection=PERFORMANCE_AGGREGATES),
+    }

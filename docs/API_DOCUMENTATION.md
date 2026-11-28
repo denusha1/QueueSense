@@ -1,5 +1,13 @@
 # QueueSense API documentation
 
+| Interface | Intended client | How to explore |
+| --- | --- | --- |
+| Next.js same-origin clinic proxy | Staff and patient browsers | Run the local demo and use the web interface. The proxy forwards only approved routes. |
+| FastAPI staff API under `/api/v1` | Authorized internal clients | Use the development Swagger UI at `http://127.0.0.1:8001/docs` or the [staff API reference](API_REFERENCE.md). |
+| Partner weekly waiting-time API | Approved subscribed applications | Review the [OpenAPI file](../api-management/openapi.yaml) and [Postman collection](../api-management/queuesense.postman_collection.json). Hosted invocation and portal publication are pending. |
+
+Clinic and partner credentials use different trust policies. See the [JWT and gateway security architecture](SECURITY_ARCHITECTURE.md) and [HTTP 429 handling](TRAFFIC_MANAGEMENT.md#http-429-and-retry-behavior).
+
 ## Partner API
 
 The Developer Portal publication contract is [`api-management/openapi.yaml`](../api-management/openapi.yaml). It declares one read-only operation under the **Waiting time** tag. Import this file into Choreo. It contains the schemas, error and response examples, and the relative origin path. For a client, use the versioned invocation base copied from the Developer Portal. [Gateway design](../api-management/gateway-design.md)
@@ -61,6 +69,7 @@ The clinic browser uses the same-origin Next.js proxy with cookies for staff and
 | Method and path | Request | Success response |
 | --- | --- | --- |
 | `GET /health` | No body or credentials. Used at private service ingress. | 200 `{status: "ok"}` when the runtime database check succeeds. |
+| `GET /health/live` | Private infrastructure probe. | 200 with `status: "ok"` when the API process handles the request. |
 | `POST /auth/login` | JSON `email`, `password`, `role`, optional `otp`. | Staff identity and expiry with HttpOnly session cookies. |
 | `POST /api/v1/auth/login` | Same credentials and Origin requirement. | `data` staff identity. JWT mode also returns `access_token` and `token_type: "Bearer"`. The refresh credential is delivered as an HttpOnly cookie. |
 | `POST /auth/refresh`, `POST /api/v1/auth/refresh` | Current refresh cookie in JWT mode. Development opaque mode uses the session cookie. | Replacement cookies and identity. The v1 JWT response includes the new access token. |

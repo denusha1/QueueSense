@@ -9,6 +9,7 @@ const privatePageHeaders = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
   images: { unoptimized: true },
   async headers() {
     return [

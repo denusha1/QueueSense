@@ -156,27 +156,25 @@ QUEUE_ORDERS = {
 
 
 def staff_queue_page(conn: DatabaseConnection, query, doctor_id):
-    where = (
-        's.service_date=coalesce(%s::date,(now() AT TIME ZONE d.timezone)::date) '
-        'AND (%s::uuid IS NULL OR t.department_id=%s) '
-        'AND (%s::uuid IS NULL OR t.staff_id=%s) AND (%s::text IS NULL OR t.status=%s)'
-    )
-    params = (
-        query.day,
-        query.department_id,
-        query.department_id,
-        query.staff_id,
-        query.staff_id,
-        query.status,
-        query.status,
-        doctor_id,
-        doctor_id,
-    )
+    clauses = ['s.service_date=coalesce(%s::date,(now() AT TIME ZONE d.timezone)::date)']
+    params = [query.day]
+    for value, clause in (
+        (query.department_id, 's.department_id=%s'),
+        (query.staff_id, 't.staff_id=%s'),
+        (query.status, 't.status=%s'),
+    ):
+        if value is not None:
+            clauses.append(clause)
+            params.append(value)
+    params.extend((doctor_id, doctor_id))
     source = (
         ' FROM queue_tokens t JOIN queue_sessions s ON s.id=t.session_id '
-        'JOIN departments d ON d.id=t.department_id WHERE ' + where + DOCTOR_QUEUE_FILTER
+        'JOIN departments d ON d.id=s.department_id WHERE '
+        + ' AND '.join(clauses) + DOCTOR_QUEUE_FILTER
     )
     total = conn.execute('SELECT count(*) AS n' + source, params).fetchone()['n']
+    if total <= query.offset:
+        return [], total
     rows = conn.execute(
         'SELECT '
         + QUEUE_RECORD_FIELDS

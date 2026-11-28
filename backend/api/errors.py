@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from http import HTTPStatus
 
 import psycopg
+from psycopg_pool import TooManyRequests
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -198,3 +199,4 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ServiceError, service_error)
     app.add_exception_handler(RequestValidationError, validation_error)
     app.add_exception_handler(psycopg.Error, database_error)
+    app.add_exception_handler(TooManyRequests, database_error)

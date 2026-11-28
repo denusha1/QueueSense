@@ -250,11 +250,11 @@ def cohort_filters(query):
     )
 
 
-def cohort_metrics(settings, user, query):
+def cohort_metrics(settings, user, query, *, projection):
     authorize(user, 'analytics:read')
     where, args = cohort_filters(query)
     with connection(settings) as conn:
-        return cohort_summary(conn, where, args)
+        return cohort_summary(conn, where, args, projection=projection)
 
 
 def peak_metrics(settings, user, query):

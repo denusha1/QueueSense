@@ -1,0 +1,65 @@
+name: Deploy an existing build to Choreo Development
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_id:
+        description: ID of an existing successful build on the configured deployment track
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: choreo-development
+  cancel-in-progress: false
+
+jobs:
+  deploy-development:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: choreo-development
+    env:
+      CHOREO_REGION: ${{ vars.CHOREO_REGION || 'US' }}
+      CHOREO_ORG: ${{ vars.CHOREO_ORG }}
+      CHOREO_PROJECT: ${{ vars.CHOREO_PROJECT }}
+      CHOREO_COMPONENT: ${{ vars.CHOREO_COMPONENT }}
+      CHOREO_DEPLOYMENT_TRACK: ${{ vars.CHOREO_DEPLOYMENT_TRACK }}
+      CHOREO_BUILD_ID: ${{ inputs.build_id }}
+    steps:
+      - name: Verify inputs and install the official WSO2 Developer Platform CLI
+        shell: bash
+        run: |
+          if [[ "$CHOREO_REGION" != US && "$CHOREO_REGION" != EU ]]; then
+            echo 'CHOREO_REGION must be US or EU.' >&2
+            exit 1
+          fi
+          : "${CHOREO_ORG:?Configure CHOREO_ORG}"
+          : "${CHOREO_PROJECT:?Configure CHOREO_PROJECT}"
+          : "${CHOREO_COMPONENT:?Configure CHOREO_COMPONENT}"
+          : "${CHOREO_DEPLOYMENT_TRACK:?Configure CHOREO_DEPLOYMENT_TRACK}"
+          : "${CHOREO_BUILD_ID:?Enter an existing build ID}"
+          cli_dir="$RUNNER_TEMP/queuesense-wdp"
+          mkdir -p "$cli_dir"
+          curl --fail --show-error --silent --location --retry 3 \
+            'https://github.com/wso2/wdp-cli/releases/download/v1.2.37-wdp/wdp-cli-v1.2.37-wdp-linux-amd64.tar.gz' \
+            --output "$cli_dir/wdp.tar.gz"
+          (
+            cd "$cli_dir"
+            echo '15a742a35359b19550e6f99473fa73fdfe9e11ecaa9bb6d049122777a79961e7  wdp.tar.gz' | sha256sum --check
+            tar -xzf wdp.tar.gz
+            test -x wdp
+          )
+      - name: Submit the deployment to Development
+        shell: bash
+        env:
+          CHOREO_PAT: ${{ secrets.CHOREO_PAT }}
+        run: |
+          : "${CHOREO_PAT:?Configure the CHOREO_PAT environment secret}"
+          cli="$RUNNER_TEMP/queuesense-wdp/wdp"
+          printf '%s\n' "$CHOREO_PAT" | "$cli" login --non-interactive --with-token --org "$CHOREO_ORG"
+          "$cli" create deployment --non-interactive --org "$CHOREO_ORG" "$CHOREO_COMPONENT" \
+            --project "$CHOREO_PROJECT" --deployment-track "$CHOREO_DEPLOYMENT_TRACK" \
+            --env Development --build-id="$CHOREO_BUILD_ID"
+          echo 'Development deployment submitted. Verify rollout and health in the Choreo Console.'

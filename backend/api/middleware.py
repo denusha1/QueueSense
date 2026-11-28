@@ -1,5 +1,7 @@
 """Request correlation, common security headers, and origin validation."""
 
+from time import perf_counter
+
 from fastapi import Request
 
 from backend.api.errors import error_response, unexpected_error
@@ -8,6 +10,8 @@ from backend.core.errors import ServiceError
 
 
 async def headers_and_origin(request: Request, call_next):
+    telemetry = getattr(request.app.state, 'telemetry', None)
+    started = perf_counter() if telemetry else 0.0
     request_id = assign_request_id(request)
     settings = request.app.state.settings
     origins = request.headers.getlist('origin')
@@ -40,4 +44,6 @@ async def headers_and_origin(request: Request, call_next):
         )
     if settings.secure_cookie:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+    if telemetry:
+        telemetry.record(request, response, perf_counter() - started)
     return response

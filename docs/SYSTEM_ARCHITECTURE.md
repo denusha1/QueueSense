@@ -1,111 +1,93 @@
 # QueueSense Enterprise system architecture
 
-**Target design · Stage 2 · 25 November 2026**
+QueueSense runs a Next.js web server, a modular FastAPI monolith and PostgreSQL. The clinic path and the partner integration have separate entry points. The clinic stack and the dedicated HTTPS partner ingress have been exercised locally. The Choreo-managed portion requires hosted configuration. [Staging evidence](END_TO_END_TEST_REPORT.md)
 
-QueueSense Enterprise should use a **modular FastAPI monolith**, a Next.js web application, and PostgreSQL as the operational source of truth. Choreo API Management provides the gateway and Developer Portal for approved integrations. The clinic browser continues to use Next.js and private FastAPI routes. This design assumes one clinic installation with multiple departments and preserves the existing synthetic-data workflows. The as-built system is documented separately. [Stage 1 audit](PROJECT_AUDIT.md) · [Existing architecture](EXISTING_ARCHITECTURE.md)
-
-## High-level architecture
+## System overview
 
 ```mermaid
 flowchart LR
-    People["Patients and clinic staff"] -->|"HTTPS"| Web["Next.js web app and same-origin proxy"]
-    Partner["Approved integration client"] -->|"OAuth 2.0 access token"| Gateway["Choreo API Gateway and API Proxy"]
-    Partner -.->|"Discover and subscribe"| Portal["Choreo Developer Portal"]
-    Portal -.->|"Publishes integration contract"| Gateway
-
-    subgraph Origin["QueueSense application boundary"]
-        BrowserRouter["Browser and patient routers"]
-        IntegrationRouter["Versioned integration router"]
-        Domain["FastAPI domain modules"]
-        Worker["Automation and delivery worker"]
-        DB[("PostgreSQL")]
-        Artifact["Versioned model artifact"]
-        BrowserRouter --> Domain
-        IntegrationRouter --> Domain
-        Domain -->|"Bounded queries and transactions"| DB
-        DB -->|"Outbox jobs"| Worker
-        Worker -->|"Updates job state"| DB
-        Artifact -->|"Wait inference"| Domain
+    Browser["Clinic staff or patient browser"] --> Web["Next.js UI and same-origin proxy"]
+    Web --> Staff["FastAPI clinic endpoints"]
+    Client["Approved partner app"] -.-> Gateway["Choreo API Proxy · hosted setup pending"]
+    Portal["Choreo Developer Portal · publication pending"] -.-> Client
+    Gateway -.->|"mTLS and signed assertion"| Ingress["Nginx dedicated HTTPS ingress"]
+    Ingress --> Partner["FastAPI integration endpoint"]
+    subgraph Application["FastAPI process"]
+        Staff --> Domain["Identity, queue, arrivals, analytics"]
+        Partner --> Aggregate["Department-scoped aggregate"]
+        Domain --> Prediction["Versioned prediction model"]
+        Worker["Optional automation and delivery worker"]
     end
-
-    Web -->|"Private connection"| BrowserRouter
-    Gateway -->|"Authenticated ingress and signed backend JWT"| IntegrationRouter
-    Worker --> Providers["Optional delivery providers"]
-    Gateway -.-> Telemetry["Operational telemetry and alerting"]
-    Web -.-> Telemetry
-    Domain -.-> Telemetry
-    Worker -.-> Telemetry
+    Domain --> DB[("PostgreSQL")]
+    Aggregate --> DB
+    Worker --> DB
+    Domain --> Telemetry["JSON logs, private metrics and health"]
+    DB -.->|"LISTEN / NOTIFY on commit"| Domain
+    Domain -.->|"SSE change signal"| Web
 ```
 
-The integration router calls the same use cases and read logic as the browser routes. It has its own request types, authorization dependencies, and deliberately small response models. Jump to the [API architecture](API_ARCHITECTURE.md), [security architecture](SECURITY_ARCHITECTURE.md), or [deployment architecture](DEPLOYMENT_ARCHITECTURE.md).
-
-## Users and primary workflows
-
-| User | Main workflows |
+| Boundary | Responsibility and source |
 | --- | --- |
-| Patient | Confirm an eligible arrival, track the linked visit, receive status updates, and submit eligible visit feedback. |
-| Receptionist | Check in patients, issue a private token link, manage appointments and coordinate queues. |
-| Doctor | Manage the linked clinician's availability and service progression. Consult the queue information allowed by staff policy. |
-| Administrator | Manage accounts, role assignments, departments, clinician records and audit access. Handle authorized support and queue tasks. |
-| Manager | Review waiting times and capacity, use staffing simulations, and export authorized reports. |
+| Next.js | Role workspaces, private tracking and a same-origin allowlist that forwards clinic auth, JSON, reports, images and SSE. [Proxy source](../frontend/services/api-proxy.ts) |
+| FastAPI adapters | Browser-compatible routes, versioned staff endpoints and the conditional partner operation. Schemas validate inputs and constrain outputs. [App factory](../backend/app.py) · [v1 routes](../backend/api/v1) |
+| Application modules | Identity, clinic operations, scheduling and arrivals, reports, inference, and optional delivery. [Services](../backend/services) · [Arrivals](../backend/arrivals.py) · [Automation](../backend/automation.py) |
+| Data access | Psycopg transactions and parameterized SQL. Optional request pool for short database work. SSE retains dedicated listener connections. [Database runtime](../backend/database.py) · [Repositories](../backend/repositories) |
+| PostgreSQL | Staff sessions and grants, clinic records, events, audits, reporting history and shared request budgets. [ER diagram](DATABASE_DESIGN.md#entity-relationships) |
+| Operations | Health checks, per-worker metrics and scoped JSON logs. [Monitoring architecture](OBSERVABILITY_ARCHITECTURE.md) |
 
-## Module ownership
-
-These are code boundaries inside one backend. HTTP adapters depend on application use cases. Use cases own policy, transaction scope and the invocation of SQL or provider adapters. Modules exchange explicit commands and results with typed schemas. Database constraints remain the last line of protection for shared invariants.
-
-| Module | Owns | Starting point |
-| --- | --- | --- |
-| Identity and access | Staff authentication, sessions, role checks, account settings and audit of access changes. Integration identities resolve to separate client grants. | [App factory](../backend/app.py), [accounts](../backend/accounts.py), [security](../backend/security.py) |
-| Queue operations | Check-in, numbering, priority and eligibility, lifecycle transitions, events, private status and visit feedback. | [Product routes](../backend/product.py), [feedback](../backend/experience.py), [integrity migrations](../database/migrations) |
-| Clinician and arrivals | Department and clinician configuration, schedules, availability inputs, booking capacity, kiosk links and idempotent arrival. Queue operations and arrivals can share one transaction where issuing a token requires both modules. | [Product routes](../backend/product.py), [planning](../backend/planning.py), [arrivals](../backend/arrivals.py) |
-| Analytics and prediction | Wait inference, capacity fallback, operational and model metrics, demand planning, imports and reports. | [Services](../backend/services), [model training](../ml/src/train.py) |
-| Automation and delivery | Reminders, inboxes, consented destinations and delivery retries. Keep the PostgreSQL outbox and a separately runnable worker from the same backend image when deployment work reaches that step. | [Automation](../backend/automation.py), [delivery](../backend/delivery.py) |
-| Infrastructure | Typed config, database connections, HTTP policies, observability, health probes and application startup. | [App factory](../backend/app.py), [health probes](../backend/experience.py) |
-
-## Database interaction
+## Partner gateway request flow
 
 ```mermaid
 sequenceDiagram
-    participant B as Staff browser
-    participant N as Next.js proxy
-    participant F as FastAPI queue use case
+    participant C as Approved application
+    participant OAuth as Hosted key manager
+    participant G as Choreo API Proxy
+    participant N as Dedicated HTTPS ingress
+    participant A as FastAPI partner route
     participant P as PostgreSQL
-    participant L as Live update listener
+    Note over C,G: Hosted OAuth, subscription and gateway checks pending
+    C->>OAuth: Request token using client credentials
+    OAuth-->>C: OAuth access token
+    C->>G: GET wait-time-summary with bearer token
+    G->>G: Enforce subscription, token and gateway policy
+    G->>N: Send approved operation and signed assertion over mTLS
+    Note over N,P: Origin path exercised locally with synthetic gateway credentials
+    N->>A: Forward GET and X-JWT-Assertion
+    A->>A: Verify JWKS signature, issuer, audience and proxy context
+    A->>P: Apply department quota and read completed-week aggregate
+    P-->>A: Counts and wait metrics
+    A-->>N: Aggregate or suppressed result
+    N-->>G: Return status, JSON and correlation header
+    G-->>C: Return partner API response
+```
 
-    B->>N: Check in with staff session and allowed origin
-    N->>F: Forward the allowlisted operation
-    F->>P: Resolve the active session and staff role
-    F->>P: Begin write transaction and lock queue session
-    F->>P: Write token, service event, audit and eligible estimate
-    alt All required writes succeed
-        F->>P: Commit
-        par HTTP result
-            F-->>N: Return created token and private receipt
-            N-->>B: 201 Created
-        and Live updates
-            P-->>L: Notify after commit
-            L-->>B: Send change signal through browser SSE
-        end
-    else Write fails
-        F->>P: Roll back
-        F-->>N: Return a safe error
-        N-->>B: Return error status
+The proxy exposes `GET /wait-time-summary`. The HTTPS Target supplies the base path `/api/integrations/v1`. The ingress forwards the allowed operation and drops consumer cookies and Authorization. FastAPI verifies the gateway assertion and enforces the configured department. The application enforces its own 30-read-per-minute quota and suppresses cohorts with fewer than ten measured waits. [Gateway and ingress configuration](../api-management/proxy-configuration.md) · [Partner contract](../api-management/openapi.yaml)
+
+## Queue transaction and live updates
+
+```mermaid
+sequenceDiagram
+    participant B as Reception browser
+    participant W as Next.js
+    participant F as FastAPI queue service
+    participant D as PostgreSQL
+    participant T as Connected trackers
+    B->>W: Submit check-in with staff session
+    W->>F: Forward allowlisted request
+    F->>D: Resolve active session and permissions
+    F->>D: Lock queue session and allocate next token
+    F->>D: Write token, event and audit record
+    alt Commit succeeds
+        D-->>F: Commit
+        F-->>W: Created token and private receipt
+        W-->>B: 201 Created
+        D-->>F: Notify listeners after commit
+        F-->>T: Signal change so clients reload current state
+    else Transaction fails
+        F->>D: Roll back
+        F-->>W: Safe failure and request ID
+        W-->>B: Return failure status
     end
 ```
 
-PostgreSQL continues to enforce department ownership, valid transitions and one active token per clinician. The existing queue ordering and appointment retry behavior stay regression invariants. Keep live events as change signals, and reload authoritative state after reconnect. Measure whether a listener per API process and a bounded request pool improve connection usage under load. Always bound report queries and their concurrency so staff mutations retain capacity. [Database schema](../database/migrations) · [Live updates](../backend/arrivals.py#L183) · [Technical debt](TECHNICAL_DEBT.md)
-
-## Waiting-time analytics
-
-Keep training offline and promote a versioned model artifact together with its metadata. Runtime reuse of the same prediction logic keeps clinic displays consistent, preserves the initial estimate versus actual wait, and allows a capacity fallback when the model is unavailable or the visit has constraints outside its features. Track prediction availability, observed MAE, sample size and model version. Treat the existing synthetic evaluation as baseline evidence and validate against appropriately governed clinic data before setting accuracy targets. [Model design](../ml/README.md) · [Inference](../backend/services/prediction.py) · [Observed monitoring](../backend/services/monitoring.py)
-
-## Architecture trade-offs
-
-| Choice | Advantage | Cost or limit |
-| --- | --- | --- |
-| Modular monolith | One transaction can cover check-in, visit state, service events and auditing. Existing deployment and PostgreSQL remain useful. Modules can be tested and changed incrementally. | Release and failure boundaries are shared. Slow reporting, CPU-heavy inference and provider backlogs need measurable resource limits. |
-| Microservices | Independent scaling, ownership and isolation can benefit separately operated workloads. | Distributed transactions, event delivery, reconciliation, service identity and deployment overhead would complicate tightly coupled queue operations at the current scale. |
-| Next.js, FastAPI and PostgreSQL | Reuses current UI, authentication behavior, Python model stack, SQL migrations and transactional constraints. | Next.js and FastAPI need synchronized route contracts. PostgreSQL connections, queries and locks need explicit operational budgets. |
-| Choreo managed gateway | Gives approved integrations a managed API entry point and a portal lifecycle. | Adds a network hop and an external dependency. Environment parity, certificates and proxy behavior require staging evidence. [Official API Proxy workflow](https://wso2.com/engineering-platform/developer-platform/docs/develop-components/develop-proxy/develop-an-api-proxy-from-an-open-api-specification/) |
-
-Start with the worker as a separate process of the same backend if provider work affects API latency or deployment cadence. Consider an analytics read replica or precomputed aggregates only after queries measurably compete with queue writes and freshness requirements are agreed. Consider a distinct inference service only if profiling demonstrates a materially different scaling need. Keep queue, booking and audit writes together while they share an atomic consistency requirement.
+A modular monolith keeps transactions and deployment straightforward. Reporting, inference and notifications share runtime resources. Benchmark those workloads before introducing separate services. Read replicas, precomputed aggregates or a dedicated worker become useful when measured contention, independent scaling or separate ownership warrants them. [Decision records](TECHNICAL_DECISIONS.md) · [Deployment and CI diagrams](DEPLOYMENT_GUIDE.md)

@@ -1,14 +1,21 @@
 """Configuration shared by HTTP handlers, workers, and provider adapters."""
 
+from __future__ import annotations
+
 import base64
 import binascii
 import os
 import re
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from backend.core.choreo import ChoreoSettings
+
+if TYPE_CHECKING:
+    from psycopg_pool import ConnectionPool
+    from backend.database import DatabaseConnection
 
 CLINIC_TIMEZONE = ZoneInfo('Asia/Colombo')
 DEFAULT_ORIGINS = 'http://127.0.0.1:3001,http://localhost:3001'
@@ -79,6 +86,12 @@ class Settings:
     db_lock_timeout_ms: int = 5_000
     jwt: JwtSettings | None = None
     choreo: ChoreoSettings | None = None
+    db_pool_max_size: int = 0
+    connection_pool: ConnectionPool[DatabaseConnection] | None = field(
+        default=None, repr=False, compare=False
+    )
+    request_logs_enabled: bool = False
+    metrics_bearer_token: str = field(default='', repr=False)
 
     @classmethod
     def from_env(cls) -> 'Settings':
@@ -100,6 +113,9 @@ class Settings:
             )
         if not origins:
             raise RuntimeError('At least one frontend origin is required')
+        metrics_token = os.environ.get('METRICS_BEARER_TOKEN', '')
+        if metrics_token and not re.fullmatch(r'[A-Za-z0-9_-]{32,256}', metrics_token):
+            raise RuntimeError('METRICS_BEARER_TOKEN must contain 32–256 URL-safe characters')
         return cls(
             url,
             origins,
@@ -115,6 +131,9 @@ class Settings:
             db_lock_timeout_ms=positive_setting('DB_LOCK_TIMEOUT_MS', 5_000, 600_000),
             jwt=JwtSettings.from_env(required=production),
             choreo=ChoreoSettings.from_env(),
+            db_pool_max_size=positive_setting('DB_POOL_MAX_SIZE', 0, 30, minimum=0),
+            request_logs_enabled=os.environ.get('REQUEST_LOGS_ENABLED', 'true') == 'true',
+            metrics_bearer_token=metrics_token,
         )
 
 

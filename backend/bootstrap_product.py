@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime,timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -11,8 +12,8 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 def main():
-    url=configure(owner=True)
-    subprocess.run([str(ROOT/'.venv/bin/python'),'database/scripts/manage.py','migrate'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},check=True)
+    url=os.environ.get('DATABASE_URL') or configure(owner=True)
+    subprocess.run([sys.executable,'database/scripts/manage.py','migrate'],cwd=ROOT,env={**os.environ,'DATABASE_URL':url},check=True)
     with psycopg.connect(url) as conn:
         conn.execute((ROOT/'database/sql/product_runtime_grants.sql').read_text())
         # The demo doctor's authority is tied to one clinician, not arbitrary request IDs.

@@ -4,12 +4,15 @@ QueueSense uses PostgreSQL 17 and one database per clinic installation. Departme
 
 ## Entity relationships
 
+ER diagram of the clinic and authorization data. Optional patient references preserve historical anonymous visits.
+
 ```mermaid
 erDiagram
     ROLES ||--o{ USERS : assigned_to
     ROLES ||--o{ ROLE_PERMISSIONS : grants
     PERMISSIONS ||--o{ ROLE_PERMISSIONS : defines
     USERS o|--o| STAFF : signs_in_as
+    USERS ||--o{ AUTH_SESSIONS : authenticates
     USERS o|--o{ PATIENTS : registers
     USERS o|--o{ AUDIT_LOGS : acts
     USERS ||--o{ NOTIFICATION_READS : reads
@@ -32,6 +35,12 @@ erDiagram
     NOTIFICATIONS ||--o{ NOTIFICATION_READS : tracks
     NOTIFICATIONS ||--o{ NOTIFICATION_DELIVERIES : dispatches
 
+    AUTH_SESSIONS {
+        uuid id UK
+        uuid user_id FK
+        timestamptz expires_at
+        text auth_mode
+    }
     PATIENTS {
         uuid id PK
         text external_id UK

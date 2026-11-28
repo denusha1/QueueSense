@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
-const base = 'http://127.0.0.1:3001';
+const { join } = require('node:path');
+const base = process.env.BASE_URL || 'http://127.0.0.1:3001';
 (async () => {
  const browser = await chromium.launch({ headless: true });
  try {
@@ -64,7 +65,13 @@ const base = 'http://127.0.0.1:3001';
   await queue.getByLabel('Service clinician').selectOption(clinician.id);
   await queue.locator('tbody tr').getByRole('button', { name: 'Call', exact: true }).click();
   await visitor.getByRole('heading', { name: 'It’s your turn', exact: true }).waitFor({ timeout: 5000 });
+  const startedService = queue.waitForResponse(response =>
+   /\/api\/service\/queue\/[^/]+\/status$/.test(response.url()) && response.request().method() === 'PATCH',
+  );
   await queue.locator('tbody tr').getByRole('button', { name: 'Start service', exact: true }).click();
+  const startResponse = await startedService;
+  assert.ok(startResponse.ok(), 'Start service: ' + await startResponse.text());
+  await visitor.getByRole('heading', { name: 'Your consultation is in progress', exact: true }).waitFor({ timeout: 5000 });
   await queue.locator('tbody tr').getByRole('button', { name: 'Complete', exact: true }).click();
   await visitor.getByRole('heading', { name: 'Your visit is complete', exact: true }).waitFor({ timeout: 5000 });
   await page.goto(base + '/workspace/admin?view=checkin');
@@ -96,7 +103,7 @@ const base = 'http://127.0.0.1:3001';
    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Appointment overflow ' + width);
   }
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.screenshot({ path: '/tmp/queuesense-appointments.png', fullPage: true });
+  await page.screenshot({ path: join(process.env.QUEUESENSE_SCREENSHOTS_DIR || '/tmp', 'queuesense-appointments.png'), fullPage: true });
   assert.deepEqual(errors, []);
   await visitorContext.close();
   console.log('PASS: slot publication, capacity, booking QR, anonymous idempotent arrivals, two-client queue and patient pushes, walk-in QR, revocation and responsive layouts.');

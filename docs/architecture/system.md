@@ -1,5 +1,7 @@
 # QueueSense system architecture
 
+> Historical baseline before Enterprise JWT, SSE and gateway work. See the [current system architecture](../SYSTEM_ARCHITECTURE.md).
+
 ```mermaid
 flowchart LR
     Browser[Staff browser] --> Next[Next.js role workspace]

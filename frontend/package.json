@@ -6,8 +6,10 @@
     "dev": "next dev --hostname 0.0.0.0 --port ${PORT:-3001}",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0 --port ${PORT:-3001}",
+    "lint": "eslint . --max-warnings 13",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "node tests/e2e.cjs"
+    "test:e2e": "node tests/e2e.cjs",
+    "test:browser": "node --test tests/suite.test.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -19,6 +21,8 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
     "playwright": "^1.63.0",
     "typescript": "^5.0.0"
   }

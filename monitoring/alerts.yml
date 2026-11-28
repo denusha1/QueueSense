@@ -1,0 +1,45 @@
+groups:
+  - name: queuesense-api
+    rules:
+      - alert: QueueSenseBackendUnreachable
+        expr: up{job="queuesense-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: QueueSense FastAPI (or its private metrics scrape) is unreachable.
+      - alert: QueueSenseDatabaseReadinessFailing
+        expr: sum(increase(queuesense_http_requests_total{job="queuesense-api",route="/health",status="503"}[2m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: QueueSense readiness checks are reporting a database failure.
+      - alert: QueueSenseServerErrorRate
+        expr: |
+          sum(rate(queuesense_http_requests_total{job="queuesense-api",status=~"5..",route!~"/health|/health/live"}[5m]))
+          / clamp_min(sum(rate(queuesense_http_requests_total{job="queuesense-api",route!~"/health|/health/live"}[5m])), 1e-9) > 0.02
+          and sum(increase(queuesense_http_requests_total{job="queuesense-api",route!~"/health|/health/live"}[5m])) >= 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: QueueSense server errors are above 2 percent.
+      - alert: QueueSenseResponseLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(queuesense_http_request_duration_seconds_bucket{job="queuesense-api",route!~"/health|/health/live"}[5m]))
+          ) > 0.5
+          and sum(increase(queuesense_http_request_duration_seconds_count{job="queuesense-api",route!~"/health|/health/live"}[5m])) >= 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: QueueSense FastAPI p95 time to response headers is above 500 ms.
+      - alert: QueueSenseRateLimitRejections
+        expr: sum(increase(queuesense_http_requests_total{job="queuesense-api",status="429"}[5m])) >= 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: QueueSense FastAPI is repeatedly rejecting requests under its traffic policies.

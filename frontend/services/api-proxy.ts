@@ -79,8 +79,14 @@ export async function forwardApi(
   },
 ) {
   const deadline = AbortSignal.timeout(options.timeoutMs);
+  const traceId = requestId.replaceAll('-', '');
+  const parentId = crypto.randomUUID().replaceAll('-', '').slice(0, 16);
   try {
-    const headers = new Headers({ 'Content-Type': 'application/json', [requestIdHeader]: requestId });
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+      [requestIdHeader]: requestId,
+      traceparent: `00-${traceId}-${parentId}-00`,
+    });
     const origin = request.headers.get('origin');
     if (origin) headers.set('Origin', origin);
     const cookieNames = options.forwardRefresh ? ['queuesense_session', 'queuesense_refresh'] : ['queuesense_session'];
@@ -133,6 +139,7 @@ export async function forwardApi(
         event: deadline.aborted ? 'upstream_timeout' : 'upstream_unavailable',
         service: options.service,
         request_id: requestId,
+        trace_id: traceId,
       }));
     }
     if (deadline.aborted) return proxyError(requestId, 504, 'The service took too long to respond.');

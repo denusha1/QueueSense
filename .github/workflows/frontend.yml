@@ -1,0 +1,101 @@
+name: Frontend validation
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/queuesense_test
+      BASE_URL: http://127.0.0.1:3001
+      AUTH_API_URL: http://127.0.0.1:8001
+      FRONTEND_ORIGINS: http://127.0.0.1:3001
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: queuesense_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test -d queuesense_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - run: npm ci --prefix frontend
+      - name: Lint, typecheck and build
+        run: |
+          npm run lint --prefix frontend
+          npm run build --prefix frontend
+          npm run typecheck --prefix frontend
+      - name: Install fixtures and Chromium
+        run: |
+          python -m pip install -r backend/requirements.lock
+          python data/generator/generate.py --preview /tmp/queuesense-sample.json
+          frontend/node_modules/.bin/playwright install --with-deps chromium
+      - name: Prepare the isolated synthetic database
+        env:
+          ENABLE_DEMO_LOGIN: 'true'
+        run: |
+          export DATABASE_URL="$CI_DATABASE_URL"
+          python database/scripts/manage.py migrate
+          python database/scripts/manage.py seed
+          python -m backend.seed_demo
+          psql "$CI_DATABASE_URL" -v ON_ERROR_STOP=1 -c "CREATE ROLE queuesense_auth LOGIN PASSWORD 'test-auth'"
+          psql "$CI_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/sql/auth_runtime_grants.sql
+          python -m backend.bootstrap_product
+      - name: Run browser and proxy tests
+        env:
+          DATABASE_URL: postgresql://queuesense_auth:test-auth@127.0.0.1:5432/queuesense_test
+          ENABLE_DEMO_LOGIN: 'true'
+          ENABLE_AUTOMATION: 'false'
+          BROWSER_TEST_DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+        run: |
+          mkdir -p reports
+          export JWT_SIGNING_SECRET
+          JWT_SIGNING_SECRET="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          echo "::add-mask::$JWT_SIGNING_SECRET"
+          python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8001 --no-access-log --no-proxy-headers >reports/api.log 2>&1 &
+          api_pid=$!
+          (cd frontend && exec node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3001) >reports/frontend.log 2>&1 &
+          web_pid=$!
+          trap 'kill "$api_pid" "$web_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent "$AUTH_API_URL/health" >/dev/null && curl --fail --silent "$BASE_URL/" >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent "$AUTH_API_URL/health" >/dev/null
+          curl --fail --silent "$BASE_URL/" >/dev/null
+          node --test --test-reporter=spec --test-reporter=junit --test-reporter-destination=stdout --test-reporter-destination=reports/browser.xml frontend/tests/suite.test.cjs
+      - name: Check frontend dependencies
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p reports
+          npm audit --prefix frontend --audit-level=high --json > reports/frontend-audit.json
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: frontend-test-and-audit-reports
+          path: reports/
+          if-no-files-found: warn

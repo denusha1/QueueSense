@@ -31,6 +31,8 @@ pillow==13.0.0
 pluggy==1.6.0
 propcache==0.5.4
 psycopg-binary==3.3.5
+prometheus-client==0.26.0
+psycopg-pool==3.3.3
 psycopg==3.3.5
 py-vapid==1.9.4
 pycparser==3.0

@@ -9,3 +9,15 @@ data/generated
 .venv
 .pytest_cache
 **/.env*
+**/.git
+**/.local
+**/.venv
+**/.pytest_cache
+**/.npmrc
+**/*.pem
+**/*.key
+**/*.p12
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+reports

@@ -1,5 +1,7 @@
 # Full project delivery
 
+> Historical delivery snapshot for the earlier clinic build. The [project overview](PROJECT_OVERVIEW.md) and [final testing report](TESTING_REPORT.md) describe the current implementation and verification.
+
 ## Implemented application
 
 | Report area | Delivered behavior |

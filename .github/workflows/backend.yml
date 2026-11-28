@@ -1,0 +1,102 @@
+name: Backend validation
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: queuesense_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test -d queuesense_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.lock
+            .github/ci/requirements.txt
+      - name: Install locked backend and tooling
+        run: python -m pip install -r backend/requirements.lock -r .github/ci/requirements.txt
+      - name: Test dataset generator and backend
+        env:
+          TEST_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/queuesense_test
+        run: |
+          mkdir -p reports
+          python -m unittest discover -s data/generator -p 'test_*.py' -v
+          python data/generator/generate.py --preview /tmp/queuesense-sample.json
+          DATABASE_URL="$TEST_DATABASE_URL" python database/scripts/manage.py migrate
+          DATABASE_URL="$TEST_DATABASE_URL" python database/scripts/manage.py seed
+          psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -c BEGIN \
+            -f database/tests/integrity.sql -f database/tests/identity_integrity.sql -c ROLLBACK
+          python -m pytest backend/tests -q --junitxml=reports/backend.xml
+      - name: Validate API artifacts
+        env:
+          PYTHONPATH: .
+        run: |
+          python api-management/generate_openapi.py --check
+          python api-management/generate_openapi.py --staff-preview --check
+          python api-management/generate_openapi.py --postman --check
+          python -m openapi_spec_validator api-management/openapi.yaml api-management/staff-preview.openapi.yaml
+      - name: Check Python dependencies
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p reports
+          python -m pip_audit --no-deps -r backend/requirements.lock -f json -o reports/python-audit.json
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: backend-test-and-audit-reports
+          path: reports/
+          if-no-files-found: warn
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: database/package-lock.json
+      - run: python data/generator/generate.py --preview /tmp/queuesense-sample.json
+      - run: npm ci --prefix database
+      - name: Verify migration integrity
+        run: |
+          mkdir -p reports
+          npm test --prefix database 2>&1 | tee reports/database.log
+        shell: bash
+      - name: Check test dependencies
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p reports
+          npm audit --prefix database --audit-level=high --json > reports/database-npm-audit.json
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: database-validation-reports
+          path: reports/
+          if-no-files-found: warn

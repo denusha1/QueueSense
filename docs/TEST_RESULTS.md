@@ -138,3 +138,29 @@ Not executed here: Docker build/Compose, hosted CI run, cloud deployment or real
 - Backend verification passed all 147 tests against local PostgreSQL. Migration 018 applied and re-ran cleanly. Tests verified concurrent request accounting, reset behavior, staff and capability isolation, and HTTP 429 with `Retry-After` for the partner origin. The restricted API database role also enforced a quota in a rolled-back smoke transaction. PGlite verified all 18 migrations.
 - Both OpenAPI files passed validation and generation drift checks. The measured, suppressed and 429 examples match the schemas. The generated Postman collection passed the Postman v2.1 schema check, and the Choreo Git metadata points to the one-operation publication contract.
 - The additional HTTPS 429 pass-through smoke was blocked by the automatic approval review usage limit. Choreo organization access, live gateway policies and Developer Portal publication remain pending.
+
+## Stages 14–16 — Containers, CI and automated testing
+
+Local verification on 26 November 2026 used synthetic fixtures.
+
+| Check | Result |
+| --- | --- |
+| Docker Compose | Database-only and full-stack smoke passed. Verified health, static assets, non-root application containers, JWT login/logout, frontend-to-API routing, queue data persistence after replacing PostgreSQL, and application logs. Output saved to `reports/compose.log`. |
+| Native PostgreSQL and Pytest | 147 passed. Verified all 18 migrations, migration replay, integrity checks and restricted runtime privileges. JUnit saved to `reports/backend.xml`. |
+| Generator and PGlite | Seven generator tests passed. PGlite verified all 18 migrations, legacy data preservation, KPI parity and rollback. |
+| Frontend validation | Next.js production build and TypeScript passed. ESLint passed with 13 existing warnings and a file-specific baseline for 30 existing errors. |
+| API contracts | The gateway and staff preview specs passed OpenAPI validation. Regeneration checks passed for both specs and the Postman collection. |
+| Playwright | All eight scenarios passed against the locked Chromium 1243 revision. The added scenario covers synthetic patient registration, duplicate-token rejection, receptionist queue actions, assigned doctor service, patient tracking and post-logout access rejection. JUnit saved to `reports/browser-pinned.xml`. |
+| Dependencies | npm and pip-audit reported zero known advisories in the tested frontend, database and Python locks during this run. |
+| GitHub Actions | All workflow files passed actionlint. The optional Choreo Development CLI archive checksum and deployment flags were verified locally. GitHub-hosted execution and Choreo rollout remain unverified. |
+
+
+## Stages 17–19 — Performance, monitoring and staging checks
+
+- Locust completed 10-, 50- and 100-user phases with zero errors. At 100 users, aggregate p95 was 60 ms before and 44 ms after the pool and query changes. [Performance report](PERFORMANCE_REPORT.md)
+- All 150 backend tests and eight Chromium scenarios passed. Prometheus scrape syntax and five alert rules passed promtool. Both OpenAPI specifications passed validation and the API contract and Postman drift checks passed.
+- Docker Compose passed the synthetic health and failure-recovery checks. The separate local HTTPS/mTLS ingress verified signed assertions, origin rate limits and upstream recovery. GitHub-hosted CI, actual Choreo traffic and Developer Portal acceptance remain pending. [Staging integration report](END_TO_END_TEST_REPORT.md)
+
+## Stage 20 — Final portfolio verification
+
+On 28 November 2026, 150 backend tests, eight locked-Chromium scenarios and seven generator tests passed. The frontend production build, TypeScript checks, all 18 PGlite migration checks, OpenAPI validation and generation drift checks, and actionlint passed. The final review rendered nine Mermaid diagrams, checked repository Markdown file paths, and opened the 2:07 local WebM walkthrough. The Compose and partner HTTPS smoke evidence is recorded in the [final testing report](TESTING_REPORT.md).

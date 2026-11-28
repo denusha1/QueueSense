@@ -11,3 +11,8 @@ router = APIRouter()
 def health(settings: AppSettings):
     check_database(settings)
     return {'status': 'ok'}
+
+
+@router.get('/health/live', response_model=HealthStatus, include_in_schema=False)
+def liveness():
+    return {'status': 'ok'}

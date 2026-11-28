@@ -1,0 +1,30 @@
+name: Deployment preparation
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and exercise the full Compose stack
+        shell: bash
+        run: |
+          mkdir -p reports
+          python3 scripts/smoke_compose.py --faults 2>&1 | tee reports/compose.log
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: container-smoke-and-contract
+          path: |
+            reports/compose.log
+            api-management/openapi.yaml
+          if-no-files-found: warn

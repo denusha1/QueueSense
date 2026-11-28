@@ -1,120 +1,25 @@
-name: QueueSense checks
+name: QueueSense CI
+
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 concurrency:
-  group: queuesense-ci-${{ github.workflow }}-${{ github.ref }}
+  group: queuesense-ci-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
-  product:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: queuesense_test
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U test -d queuesense_test"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: pip install -r backend/requirements.lock
-      - run: python -m unittest discover -s data/generator -p 'test_*.py' -v
-      - run: python -m pytest backend/tests -q
-        env:
-          TEST_DATABASE_URL: postgresql://test:test@localhost:5432/queuesense_test
-      - run: npm install --prefix frontend --no-package-lock
-      - run: npm run typecheck --prefix frontend
-      - run: npm run build --prefix frontend
-  database:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: python data/generator/generate.py --preview /tmp/queuesense-sample.json
-      - run: npm install --prefix database --no-package-lock
-      - run: npm test --prefix database
-  browser-e2e:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: queuesense_test
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U test -d queuesense_test"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: pip install -r backend/requirements.lock
-      - run: npm install --prefix frontend --no-package-lock
-      - run: python data/generator/generate.py --preview /tmp/queuesense-sample.json
-      - name: Migrate, seed, and provision isolated test roles
-        env:
-          OWNER_DATABASE_URL: postgresql://test:test@127.0.0.1:5432/queuesense_test
-          PGPASSWORD: test
-        run: |
-          DATABASE_URL="$OWNER_DATABASE_URL" python database/scripts/manage.py migrate
-          DATABASE_URL="$OWNER_DATABASE_URL" python database/scripts/manage.py seed
-          ENABLE_DEMO_LOGIN=true DATABASE_URL="$OWNER_DATABASE_URL" python -m backend.seed_demo
-          psql "$OWNER_DATABASE_URL" -v ON_ERROR_STOP=1 -c "CREATE ROLE queuesense_auth LOGIN PASSWORD 'test-auth'"
-          psql "$OWNER_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/sql/auth_runtime_grants.sql
-          psql "$OWNER_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/sql/product_runtime_grants.sql
-      - run: npm run build --prefix frontend
-        env:
-          AUTH_API_URL: http://127.0.0.1:8001
-      - run: frontend/node_modules/.bin/playwright install --with-deps chromium
-      - name: Start API and frontend
-        env:
-          DATABASE_URL: postgresql://queuesense_auth:test-auth@127.0.0.1:5432/queuesense_test
-          ENABLE_DEMO_LOGIN: 'true'
-          FRONTEND_ORIGINS: http://127.0.0.1:3001,http://localhost:3001
-          AUTH_API_URL: http://127.0.0.1:8001
-        run: |
-          nohup python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8001 --no-proxy-headers --no-access-log >/tmp/queuesense-api.log 2>&1 &
-          nohup npm run start --prefix frontend -- --port 3001 >/tmp/queuesense-frontend.log 2>&1 &
-          for attempt in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:8001/health >/dev/null && curl --fail --silent http://127.0.0.1:3001/ >/dev/null; then exit 0; fi
-            sleep 2
-          done
-          cat /tmp/queuesense-api.log /tmp/queuesense-frontend.log
-          exit 1
-      - run: npm run test:e2e --prefix frontend
-      - run: node frontend/tests/api-errors.cjs
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-e2e-diagnostics
-          path: |
-            docs/screenshots
-            /tmp/queuesense-api.log
-            /tmp/queuesense-frontend.log
+  backend:
+    uses: ./.github/workflows/backend.yml
+
+  frontend:
+    uses: ./.github/workflows/frontend.yml
+
+  deployment-preparation:
+    needs: [backend, frontend]
+    uses: ./.github/workflows/deployment-preparation.yml

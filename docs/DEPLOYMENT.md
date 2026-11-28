@@ -1,17 +1,14 @@
 # Deployment configuration
 
-The native PostgreSQL + API + frontend path and Docker Compose database/migration path have been run and tested. No public cloud deployment is claimed.
+See [Docker setup](DOCKER_SETUP.md) for the current Compose startup and verification workflow.
+
+The native PostgreSQL stack and the full Docker Compose stack have been tested locally.
 
 ## Docker services
 
-1. Copy `.env.example` to `.env`. Set a private URL-safe `POSTGRES_PASSWORD`.
-2. Generate synthetic files: `python3 data/generator/generate.py`.
-3. Run `docker compose up -d db`, then `docker compose run --rm migrate` and `docker compose --profile demo run --rm seed` against a new demo database.
-4. As the database owner, create a `queuesense_auth` LOGIN role with a private password. Apply `database/sql/auth_runtime_grants.sql` and `database/sql/product_runtime_grants.sql` to that database.
-5. Set root `.env` `AUTH_DATABASE_URL=postgresql://queuesense_auth:YOUR_PASSWORD@db:5432/queuesense`. This account must not own the schema or be a superuser.
-6. Provision staff accounts using `backend.create_user` with an owner connection. Demo seeding is explicit and for non-production only.
-7. Set `FRONTEND_ORIGINS` to the exact browser origin(s) before starting the services. For local use, `http://localhost:3001` and `http://127.0.0.1:3001` are suitable. For a LAN test, add the exact origin such as `http://192.168.1.25:3001`. For a public deployment, use only the HTTPS site origin, such as `https://queuesense.example.com`.
-8. Run `docker compose --profile full up --build -d api frontend`. The frontend is published on `HOST_BIND_ADDRESS` (defaults to all interfaces) and host port `FRONTEND_PORT` (defaults to 3001). PostgreSQL and API diagnostic ports are loopback-only by default; the frontend reaches the API over the private Compose network. Do not set `LOCAL_BIND_ADDRESS` to a public interface.
+Use [Docker setup](DOCKER_SETUP.md) to configure credentials, start the services and create a staff account. The migration job applies local runtime grants when `AUTH_DATABASE_URL` contains a configured local password. A database-only run can leave the example placeholder in place.
+
+For an explicitly synthetic demo, generate fixtures with `python3 data/generator/generate.py` and run `docker compose --profile demo run --rm seed` against an empty demo database. Set `FRONTEND_ORIGINS` to the exact browser origin. For a LAN test, set `HOST_BIND_ADDRESS` to the intended interface and include the exact LAN origin, such as `http://192.168.1.25:3001`. Keep the PostgreSQL and FastAPI host bindings on loopback.
 
 The API image includes the repository-owned model artifact. Register the model version and metrics in `model_runs` before persisting predictions; `backend/bootstrap_product.py` performs that step for the native local cluster. For a separate deployment, use the values in `ml/evaluation/results.json` and preserve matching model versions. The service still returns estimates when an artifact exists but will not write a prediction against a missing registry version.
 

@@ -1,5 +1,7 @@
 # QueueSense Enterprise deployment architecture
 
+> This document records the earlier target design. See the [current deployment and CI diagrams](DEPLOYMENT_GUIDE.md) and [staging evidence](END_TO_END_TEST_REPORT.md).
+
 **Target design · Stage 2 · 25 November 2026**
 
 Use the existing Docker build paths and GitHub Actions as a starting point. Deploy independently built Next.js and FastAPI images, a PostgreSQL instance with private connectivity, and one controlled migration job per environment. Run automation and provider delivery from the FastAPI image in a distinct process when decoupling the worker from web replicas. This permits separate scheduling while keeping one backend codebase and database. [Compose baseline](../docker-compose.yml) · [CI baseline](../.github/workflows/ci.yml)
